@@ -1,0 +1,1478 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>A05 Entry Point Pipeline — The Government of Barbados</title>
+<style data-govbb-base>
+  /* ---- gov.bb design tokens (inlined subset of styles.css) ---- */
+  :root, :host {
+    --color-yellow-100: #ffc726; --color-yellow-40: #ffe9a8; --color-yellow-00: #e8a833;
+    --color-blue-100: #00267f; --color-blue-40: #99a8cc; --color-blue-10: #e5e9f2;
+    --color-teal-100: #30c0c8; --color-teal-00: #0e5f64; --color-teal-40: #ace6e9; --color-teal-10: #eaf9f9;
+    --color-red-100: #ff6b6b; --color-red-00: #a42c2c; --color-red-10: #fff0f0;
+    --color-green-00: #00654a; --color-green-40: #a5e5ce; --color-green-10: #e9f9f3;
+    --color-grey-00: #e0e4e9; --color-grey-30: #b1b4b6;
+    --color-mid-grey-00: #595959; --color-black-00: #000; --color-white-00: #fff;
+    --color-pink-10: #fff4fb;
+    --color-text: #000; --color-text-muted: #595959; --color-background: #fff; --color-error: #a42c2c;
+    --color-link: #0e5f64; --color-link-visited: #0e5f64;
+    --color-link-hover: #000; --color-link-hover-bg: #eaf9f9;
+    --color-link-active: #000; --color-link-active-bg: #ffc726;
+    --font-family-base: "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-size-display: 3rem; --font-size-h1: 2.25rem; --font-size-h2: 1.75rem;
+    --font-size-h3: 1.25rem; --font-size-h4: 1.125rem;
+    --font-size-body: 1rem; --font-size-caption: .875rem; --font-size-caption-sm: .75rem;
+    --line-height-display: 1.1; --line-height-h1: 1.15; --line-height-h2: 1.2;
+    --line-height-h3: 1.3; --line-height-h4: 1.4;
+    --line-height-body: 1.5; --line-height-caption: 1.5;
+    --font-weight-normal: 400; --font-weight-bold: 700;
+    --spacing-xxs: .25rem; --spacing-xs: .5rem; --spacing-s: 1rem;
+    --spacing-xm: 1.5rem; --spacing-m: 2rem; --spacing-l: 4rem; --spacing-xl: 6rem;
+    --radius-sm: .25rem; --border-width-form: 2px;
+    --shadow-form-hover: inset 4px 4px 0 0 #0000001a;
+    --opacity-disabled: .4;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { font-family: var(--font-family-base); line-height: var(--line-height-body); -webkit-font-smoothing: antialiased; }
+  body { margin: 0; color: var(--color-text); background: var(--color-background); }
+  h1, h2, h3, h4, h5, h6, p, ul, ol { margin: 0; }
+  ul, ol { padding: 0; list-style: none; }
+  a { color: inherit; text-decoration: inherit; }
+  img, svg { display: block; max-width: 100%; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+
+  .govbb-page { display: grid; grid-template-rows: auto 1fr auto; min-height: 100vh; }
+  .govbb-container { width: 100%; padding-inline: var(--spacing-s); margin-inline: auto; }
+  @media (min-width: 1024px) { .govbb-container { width: 80%; max-width: 80rem; padding-inline: 0; } }
+
+  .govbb-text-display { font-size: var(--font-size-display); line-height: var(--line-height-display); font-weight: 700; margin-bottom: var(--spacing-s); }
+  .govbb-text-h1 { font-size: var(--font-size-h1); line-height: var(--line-height-h1); font-weight: 700; }
+  .govbb-text-h2 { font-size: var(--font-size-h2); line-height: var(--line-height-h2); font-weight: 700; margin-top: var(--spacing-m); margin-bottom: var(--spacing-s); }
+  .govbb-text-h3 { font-size: var(--font-size-h3); line-height: var(--line-height-h3); font-weight: 700; }
+  .govbb-text-h4 { font-size: var(--font-size-h4); line-height: var(--line-height-h4); font-weight: 700; }
+  .govbb-text-body { font-size: var(--font-size-body); line-height: var(--line-height-body); }
+  .govbb-text-caption { font-size: var(--font-size-caption); line-height: var(--line-height-caption); color: var(--color-text-muted); }
+
+  .govbb-link { color: var(--color-link); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+  .govbb-link:hover { color: var(--color-link-hover); background: var(--color-link-hover-bg); text-decoration: none; }
+  .govbb-link:focus-visible, .govbb-link:active { color: var(--color-link-active); background: var(--color-link-active-bg); outline: 0; text-decoration: none; }
+  .govbb-link--secondary { color: var(--color-link); text-decoration: underline; }
+
+  .govbb-list { padding: 0; margin: 0; }
+  .govbb-list--bullet { padding-inline-start: var(--spacing-m); list-style: disc; }
+  .govbb-list > li { margin-bottom: var(--spacing-xxs); }
+
+  .govbb-breadcrumbs { display: flex; align-items: center; font-size: var(--font-size-body); margin-block: var(--spacing-s); }
+  .govbb-breadcrumbs__list { display: flex; flex-wrap: wrap; align-items: center; gap: 0; row-gap: 4px; }
+  .govbb-breadcrumbs__item { display: flex; align-items: center; }
+  .govbb-breadcrumbs__item + .govbb-breadcrumbs__item::before { content: ""; display: inline-block; width: .4375em; height: .4375em; margin: 0 .5em; border-top: 1px solid var(--color-mid-grey-00); border-right: 1px solid var(--color-mid-grey-00); transform: rotate(45deg); flex-shrink: 0; }
+  .govbb-breadcrumbs__link { color: var(--color-link); text-decoration: underline; text-underline-offset: 2px; }
+  .govbb-breadcrumbs__link:hover { background: var(--color-link-hover-bg); color: var(--color-link-hover); text-decoration: none; }
+
+  .govbb-btn, .govbb-btn--secondary, .govbb-btn--tertiary, .govbb-btn--destructive {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    padding: var(--spacing-s) var(--spacing-xm); border: 0; cursor: pointer;
+    font-family: inherit; font-size: var(--font-size-body); line-height: 1.4;
+    border-radius: var(--radius-sm); outline: 4px solid transparent; outline-offset: 2px;
+    transition: background-color .15s, box-shadow .15s, outline-color .15s; text-decoration: none;
+  }
+  .govbb-btn { background: var(--color-teal-00); color: var(--color-white-00); }
+  .govbb-btn:hover { background: #1a777d; box-shadow: inset 0 0 0 4px rgba(255,255,255,.1); }
+  .govbb-btn:focus-visible, .govbb-btn:active { outline-color: var(--color-teal-100); }
+  .govbb-btn--secondary { background: var(--color-grey-00); color: var(--color-black-00); }
+  .govbb-btn--secondary:hover { box-shadow: inset 0 0 0 4px rgba(0,0,0,.05); }
+  .govbb-btn--secondary:focus-visible { outline-color: var(--color-teal-100); }
+  .govbb-btn--tertiary { background: transparent; color: var(--color-green-00); box-shadow: inset 0 0 0 1px var(--color-green-00); }
+  .govbb-btn--tertiary:hover { background: var(--color-green-10); }
+  .govbb-btn-group { display: flex; gap: var(--spacing-xm); flex-wrap: wrap; margin-top: var(--spacing-m); }
+
+  .govbb-form-group { display: flex; flex-direction: column; gap: var(--spacing-xs); width: 100%; margin-bottom: var(--spacing-s); }
+  .govbb-label { font-weight: 700; font-size: var(--font-size-body); }
+  .govbb-hint { color: var(--color-text-muted); font-size: var(--font-size-body); }
+  .govbb-error-message { color: var(--color-error); font-weight: 700; }
+
+  .govbb-input-wrapper, .govbb-select-wrapper {
+    display: inline-flex; align-items: stretch; width: 100%; background: var(--color-background);
+    border: var(--border-width-form) solid var(--color-text); border-radius: var(--radius-sm);
+    transition: box-shadow .15s; position: relative;
+  }
+  .govbb-input-wrapper:hover, .govbb-select-wrapper:hover { box-shadow: var(--shadow-form-hover); }
+  .govbb-input-wrapper:focus-within, .govbb-select-wrapper:focus-within { box-shadow: 0 0 0 4px var(--color-teal-100); }
+  .govbb-input-wrapper > input, .govbb-input-wrapper > textarea {
+    width: 100%; padding: var(--spacing-s); font: inherit; color: inherit;
+    background: transparent; border: 0; outline: 0;
+  }
+  .govbb-textarea { resize: vertical; min-height: 6rem; }
+  .govbb-select-wrapper { display: grid; grid-template-columns: 1fr 3rem; }
+  .govbb-select { appearance: none; padding: var(--spacing-s); padding-right: 3rem; background: transparent; border: 0; outline: 0; grid-area: 1/1/auto/-1; font: inherit; color: inherit; }
+  .govbb-select__chevron { grid-area: 1/2; display: flex; align-items: center; justify-content: center; border-left: var(--border-width-form) solid var(--color-text); background: #f0f2f4; pointer-events: none; }
+  .govbb-select__chevron > svg { width: .75rem; height: .5rem; fill: currentColor; transform: rotate(180deg); }
+
+  .govbb-error-summary {
+    border: 4px solid var(--color-red-00);
+    padding: var(--spacing-xm) var(--spacing-m);
+    margin-bottom: var(--spacing-m);
+  }
+  .govbb-error-summary__title { font-size: var(--font-size-body); font-weight: 700; }
+  .govbb-error-summary__list { display: flex; flex-direction: column; align-items: flex-start; margin-top: var(--spacing-xs); }
+  .govbb-error-summary__link { color: var(--color-red-00); text-decoration: underline; }
+
+  .govbb-status-banner { width: 100%; padding-block: var(--spacing-s); }
+  .govbb-status-banner > p { margin: 0; }
+  .govbb-status-banner--alpha { background: var(--color-blue-10); }
+  .govbb-status-banner--beta { background: var(--color-yellow-40); }
+
+  .govbb-official-banner { background: var(--color-blue-100); color: var(--color-white-00); width: 100%; }
+  .govbb-official-banner__inner { display: flex; align-items: center; gap: var(--spacing-xs); padding-block: var(--spacing-xs); font-size: var(--font-size-caption); }
+  .govbb-official-banner__crest { display: flex; align-items: center; flex-shrink: 0; }
+  .govbb-official-banner__icon { height: 24px; width: auto; flex-shrink: 0; }
+  .govbb-official-banner__text { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-s); }
+
+  .govbb-header { background: var(--color-yellow-100); color: var(--color-text); width: 100%; }
+  .govbb-header__inner { display: flex; align-items: center; gap: var(--spacing-s); padding-block: var(--spacing-s); }
+  .govbb-header__logo { height: 1.6875rem; width: auto; }
+  @media (min-width: 1024px) { .govbb-header__inner { padding-block: var(--spacing-xm); } .govbb-header__logo { height: 2.1875rem; } }
+
+  .govbb-footer { background: var(--color-blue-100); color: var(--color-white-00); width: 100%; overflow: hidden; }
+  .govbb-footer__inner { display: grid; grid-template-columns: 1fr; }
+  @media (min-width: 1024px) { .govbb-footer__inner { grid-template-columns: 1fr 1fr; } }
+  .govbb-footer__nav { display: flex; flex-direction: column; gap: var(--spacing-xs); padding-block: var(--spacing-m); }
+  .govbb-footer__link { color: inherit; text-decoration: underline; }
+  .govbb-footer__divider { border: 0; border-top: 4px solid rgba(0,0,0,.25); margin-inline: calc(var(--spacing-s) * -1); }
+  .govbb-footer__end { display: flex; flex-direction: column; gap: var(--spacing-xm); padding-block: var(--spacing-m) var(--spacing-s); }
+  .govbb-footer__coat { height: 7rem; width: auto; }
+  .govbb-footer__copy { color: var(--color-white-00); margin: 0; }
+  @media (min-width: 1024px) { .govbb-footer__end { align-items: flex-end; padding-block: var(--spacing-m); } .govbb-footer__divider { display: none; } }
+
+  .govbb-feedback-box { padding: var(--spacing-s); background: var(--color-yellow-40); border: 4px solid var(--color-yellow-100); margin-top: var(--spacing-m); }
+
+  .govbb-page__main { padding-block: var(--spacing-m); }
+</style>
+<style>
+  /* ---- Prototype-only layout (uses GOVBB design tokens) ---- */
+  .proto-shell {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-m);
+    padding-block: var(--spacing-m);
+  }
+  @media (width >= 1024px) {
+    .proto-shell { grid-template-columns: 240px 1fr; gap: var(--spacing-xl); }
+  }
+  .proto-side { display: flex; flex-direction: column; gap: var(--spacing-xs); }
+  .proto-side__heading {
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--color-mid-grey-00); margin: var(--spacing-s) 0 var(--spacing-xs); padding-inline: var(--spacing-xs);
+  }
+  .proto-nav-link {
+    display: flex; align-items: center; gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-s); text-decoration: none;
+    color: var(--color-blue-100); border-left: 4px solid transparent;
+    font-weight: 600; cursor: pointer;
+  }
+  .proto-nav-link:hover { background: var(--color-grey-10, #f3f2f1); }
+  .proto-nav-link[aria-current="page"] {
+    background: var(--color-blue-10);
+    border-left-color: var(--color-blue-100);
+    color: var(--color-blue-100);
+  }
+  .proto-nav-link .count {
+    margin-left: auto;
+    background: var(--color-blue-100); color: #fff;
+    border-radius: 12px; font-size: 0.75rem;
+    padding: 0 8px; min-width: 22px; text-align: center; line-height: 1.4;
+  }
+  .proto-main { display: flex; flex-direction: column; gap: var(--spacing-m); min-width: 0; }
+
+  .proto-tile {
+    display: block; padding: var(--spacing-s);
+    border: 2px solid var(--color-blue-100); background: #fff;
+    text-decoration: none; color: var(--color-blue-100); cursor: pointer;
+  }
+  .proto-tile:hover { background: var(--color-blue-10); }
+  .proto-tile h3 { margin: 0 0 4px; }
+
+  .proto-grid-2 { display: grid; grid-template-columns: 1fr; gap: var(--spacing-s); }
+  @media (width >= 768px) { .proto-grid-2 { grid-template-columns: 1fr 1fr; } }
+  .proto-grid-3 { display: grid; grid-template-columns: 1fr; gap: var(--spacing-s); }
+  @media (width >= 768px) { .proto-grid-3 { grid-template-columns: repeat(3, 1fr); } }
+  .proto-grid-4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-xs); }
+  @media (width >= 768px) { .proto-grid-4 { grid-template-columns: repeat(4, 1fr); } }
+
+  .proto-stat {
+    border: 1px solid var(--color-grey-30, #b1b4b6);
+    padding: var(--spacing-s); background: #fff;
+  }
+  .proto-stat__num { font-size: 2rem; font-weight: 700; line-height: 1; }
+  .proto-stat__label { font-size: 0.875rem; color: var(--color-mid-grey-00); margin-top: 4px; }
+
+  .proto-card {
+    border: 1px solid var(--color-grey-30, #b1b4b6); background: #fff;
+    padding: var(--spacing-s); display: flex; gap: var(--spacing-s); align-items: center;
+  }
+
+  .proto-pill {
+    display: inline-block; padding: 2px 10px; border-radius: 12px;
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+    line-height: 1.6;
+  }
+  .pill-stage-intake          { background: #eeefef; color: #383f43; }
+  .pill-stage-rejected-triage { background: #f6d7d2; color: #942514; }
+  .pill-stage-shaping         { background: #dbd5e9; color: #2d1a59; }
+  .pill-stage-generated       { background: var(--color-yellow-40, #fff7bf); color: #594d00; }
+  .pill-stage-validating-t1   { background: #fcd6b8; color: #7a3d00; }
+  .pill-stage-validating-t2   { background: var(--color-blue-10); color: var(--color-blue-100); }
+  .pill-stage-published       { background: #cce2d8; color: #005a30; }
+  .pill-stage-needs-rework    { background: #fcd6b8; color: #7a3d00; }
+  .pill-risk-low    { background: #cce2d8; color: #005a30; }
+  .pill-risk-medium { background: #fcd6b8; color: #7a3d00; }
+  .pill-risk-high   { background: #f6d7d2; color: #942514; }
+  .pill-risk-na     { background: #eeefef; color: #383f43; }
+
+  .proto-table { width: 100%; border-collapse: collapse; }
+  .proto-table th {
+    text-align: left; padding: var(--spacing-xs);
+    border-bottom: 2px solid var(--color-blue-100); font-size: 0.875rem;
+  }
+  .proto-table td {
+    padding: var(--spacing-xs);
+    border-bottom: 1px solid var(--color-grey-30, #b1b4b6);
+    font-size: 0.9375rem; vertical-align: top;
+  }
+  .proto-table tr:hover td { background: var(--color-blue-10); cursor: pointer; }
+
+  .proto-checklist { display: flex; flex-direction: column; }
+  .proto-checklist__item {
+    display: flex; gap: var(--spacing-xs); align-items: flex-start;
+    padding: var(--spacing-xs) 0;
+    border-bottom: 1px solid var(--color-grey-30, #b1b4b6);
+  }
+  .proto-checklist__item:last-child { border-bottom: 0; }
+  .proto-check-pass   { color: #005a30; font-weight: 700; min-width: 1.5rem; }
+  .proto-check-fail   { color: #942514; font-weight: 700; min-width: 1.5rem; }
+  .proto-check-manual { color: #7a3d00; font-weight: 700; min-width: 1.5rem; }
+
+  .proto-history {
+    border-left: 4px solid var(--color-blue-10);
+    padding-left: var(--spacing-s);
+    display: flex; flex-direction: column; gap: var(--spacing-s);
+  }
+  .proto-history__title { font-weight: 700; }
+  .proto-history__meta { font-size: 0.875rem; color: var(--color-mid-grey-00); }
+  .proto-history__note { font-size: 0.9375rem; margin-top: 4px; }
+
+  .proto-callout {
+    padding: var(--spacing-s);
+    border-left: 8px solid var(--color-blue-100);
+    background: var(--color-blue-10);
+  }
+  .proto-callout--warning { border-left-color: #f47738; background: #fcd6b8; }
+  .proto-callout--error   { border-left-color: #d4351c; background: #f6d7d2; }
+  .proto-callout--success { border-left-color: #00703c; background: #cce2d8; }
+  .proto-callout p { margin: 0; }
+  .proto-callout p + p { margin-top: var(--spacing-xs); }
+
+  .proto-field-block {
+    padding: var(--spacing-s);
+    border-left: 4px solid var(--color-blue-100);
+    background: #fafaf9;
+    margin-bottom: var(--spacing-s);
+  }
+  .proto-field-block.start    { border-left-color: #00703c; }
+  .proto-field-block.guidance { border-left-color: #f47738; }
+  .proto-field-block.shape    { border-left-color: #4c2c92; }
+  .proto-field-block__dest {
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--color-mid-grey-00);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .proto-preview {
+    border: 1px solid var(--color-grey-30, #b1b4b6);
+    margin-bottom: var(--spacing-s);
+  }
+  .proto-preview__bar {
+    background: var(--color-blue-10);
+    padding: var(--spacing-xs) var(--spacing-s);
+    font-size: 0.875rem;
+    color: var(--color-blue-100);
+    font-weight: 600;
+    border-bottom: 1px solid var(--color-grey-30, #b1b4b6);
+    display: flex; gap: var(--spacing-xs); align-items: center;
+  }
+
+  .proto-tag {
+    display: inline-block; padding: 2px 8px;
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .tag-entry    { background: var(--color-blue-10); color: var(--color-blue-100); }
+  .tag-start    { background: #cce2d8; color: #005a30; }
+  .tag-guidance { background: #fcd6b8; color: #7a3d00; }
+  .tag-shape    { background: #dbd5e9; color: #2d1a59; }
+  .tag-tier1    { background: #fcd6b8; color: #7a3d00; }
+  .tag-tier2    { background: var(--color-blue-10); color: var(--color-blue-100); }
+  .tag-rework   { background: var(--color-yellow-40, #fff7bf); color: #594d00; }
+
+  .sla-overdue { color: #d4351c; font-weight: 700; }
+  .sla-warn    { color: #f47738; font-weight: 700; }
+  .sla-ok      { color: var(--color-mid-grey-00); }
+
+  .proto-actions {
+    display: flex; gap: var(--spacing-xs);
+    flex-wrap: wrap; padding-top: var(--spacing-s);
+  }
+
+  /* Service preview wrapper (renders the live page in miniature) */
+  .preview-frame {
+    background: #fff;
+    padding: var(--spacing-m);
+    border: 1px dashed var(--color-grey-30, #b1b4b6);
+  }
+  .preview-frame .govbb-text-display { font-size: 1.75rem; }
+
+  /* Form-page tweaks for the discovery form */
+  .form-page__heading {
+    display: flex; flex-direction: column; gap: var(--spacing-s);
+    margin-bottom: var(--spacing-m);
+  }
+  .form-page__service-title {
+    display: inline-flex; align-items: center;
+    padding: var(--spacing-xs) var(--spacing-s);
+    border-left: var(--spacing-xxs, 4px) solid var(--color-blue-40, #5a9fd4);
+    color: var(--color-mid-grey-00);
+    align-self: flex-start;
+  }
+  fieldset.proto-fieldset {
+    border: 1px solid var(--color-grey-30, #b1b4b6);
+    padding: var(--spacing-s);
+    margin-bottom: var(--spacing-s);
+  }
+  fieldset.proto-fieldset > legend {
+    padding: 0 var(--spacing-xs); font-weight: 700;
+  }
+
+  /* Subtle on-hover cursor for clickable rows */
+  [data-clickable] { cursor: pointer; }
+</style>
+</head>
+<body class="govbb-page">
+
+<!-- ============================================================ -->
+<!-- Page chrome — official banner, header, alpha status banner   -->
+<!-- ============================================================ -->
+<div>
+  <div class="govbb-official-banner">
+    <div class="govbb-container govbb-official-banner__inner">
+      <div class="govbb-official-banner__crest">
+        <svg class="govbb-official-banner__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Coat of arms"><rect width="64" height="64" fill="#00267f"/><path d="M32 8 L12 14 V34 C12 46 22 56 32 60 C42 56 52 46 52 34 V14 Z" fill="#ffc726" stroke="#fff" stroke-width="1"/><path d="M32 20 L24 30 L32 40 L40 30 Z" fill="#00267f"/></svg>
+      </div>
+      <div class="govbb-official-banner__text">
+        <span>Official government website</span>
+      </div>
+    </div>
+  </div>
+
+  <header class="govbb-header">
+    <div class="govbb-container govbb-header__inner">
+      <a href="#" onclick="nav('home');return false;" aria-label="Go to the alpha.gov.bb homepage">
+        <svg class="govbb-header__logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 276 27" fill="currentColor" role="img" aria-label="Government of Barbados"><path d="M39.079 21.527C37.5026 21.527 36.103 21.1903 34.8802 20.5168C33.6721 19.8286 32.7219 18.8916 32.0294 17.7057C31.337 16.5051 30.9908 15.1288 30.9908 13.5769C30.9908 12.0249 31.337 10.6559 32.0294 9.47001C32.7219 8.26943 33.6721 7.3324 34.8802 6.65891C36.103 5.97077 37.5026 5.6267 39.079 5.6267C40.0219 5.6267 40.8911 5.7658 41.6867 6.04398C42.4823 6.32216 43.1821 6.71015 43.7861 7.20795C44.4049 7.69111 44.9205 8.24747 45.3331 8.87704L42.858 10.4144C42.6075 10.0191 42.276 9.66767 41.8635 9.3602C41.4657 9.05274 41.0237 8.81116 40.5376 8.63547C40.0514 8.45977 39.5652 8.37192 39.079 8.37192C38.1067 8.37192 37.2448 8.59886 36.4934 9.05274C35.7421 9.49197 35.1527 10.0996 34.7255 10.8756C34.2982 11.6515 34.0846 12.552 34.0846 13.5769C34.0846 14.5871 34.2909 15.4875 34.7034 16.2782C35.1307 17.0688 35.7273 17.691 36.4934 18.1449C37.2595 18.5841 38.1435 18.8038 39.1453 18.8038C39.8967 18.8038 40.567 18.6647 41.1563 18.3865C41.7456 18.0937 42.2171 17.691 42.5707 17.1786C42.9243 16.6661 43.1231 16.0659 43.1673 15.3777H39.5873V13.0278H46.0844V14.8946C46.055 16.3001 45.7382 17.5007 45.1342 18.4963C44.5301 19.4773 43.7051 20.2313 42.6591 20.7584C41.613 21.2708 40.4197 21.527 39.079 21.527Z"/><path d="M52.8353 21.527C51.7156 21.527 50.7138 21.2854 49.8298 20.8023C48.9606 20.3045 48.2755 19.6237 47.7746 18.7598C47.2884 17.896 47.0453 16.9004 47.0453 15.773C47.0453 14.6457 47.2884 13.6501 47.7746 12.7862C48.2608 11.9224 48.9385 11.2489 49.8077 10.7658C50.677 10.268 51.6714 10.0191 52.7911 10.0191C53.9255 10.0191 54.9273 10.268 55.7966 10.7658C56.6658 11.2489 57.3435 11.9224 57.8297 12.7862C58.3159 13.6501 58.559 14.6457 58.559 15.773C58.559 16.9004 58.3159 17.896 57.8297 18.7598C57.3435 19.6237 56.6658 20.3045 55.7966 20.8023C54.9421 21.2854 53.955 21.527 52.8353 21.527ZM52.8353 18.8477C53.3804 18.8477 53.8592 18.7159 54.2717 18.4524C54.6843 18.1888 55.001 17.8301 55.222 17.3763C55.4577 16.9077 55.5756 16.3733 55.5756 15.773C55.5756 15.1728 55.4577 14.6457 55.222 14.1918C54.9863 13.7233 54.6548 13.3572 54.2275 13.0937C53.815 12.8302 53.3362 12.6984 52.7911 12.6984C52.2607 12.6984 51.7819 12.8302 51.3547 13.0937C50.9421 13.3572 50.618 13.7233 50.3823 14.1918C50.1466 14.6457 50.0287 15.1728 50.0287 15.773C50.0287 16.3733 50.1466 16.9077 50.3823 17.3763C50.618 17.8301 50.9495 18.1888 51.3768 18.4524C51.804 18.7159 52.2902 18.8477 52.8353 18.8477Z"/><path d="M62.8109 21.2635L58.2806 10.2826H61.2861L64.2694 17.9472L67.2528 10.2826H70.2583L65.728 21.2635H62.8109Z"/><path d="M75.7678 21.527C74.6776 21.527 73.7126 21.2854 72.8729 20.8023C72.0331 20.3045 71.3701 19.6237 70.884 18.7598C70.4125 17.896 70.1768 16.9004 70.1768 15.773C70.1768 14.6457 70.4199 13.6501 70.906 12.7862C71.407 11.9224 72.0847 11.2489 72.9392 10.7658C73.8084 10.268 74.8029 10.0191 75.9225 10.0191C76.8949 10.0191 77.7862 10.2753 78.5965 10.7877C79.4216 11.2855 80.0772 12.0249 80.5633 13.0059C81.0643 13.9722 81.3147 15.1508 81.3147 16.5417H73.2265C73.3001 17.2738 73.6169 17.8594 74.1767 18.2986C74.7366 18.7232 75.3701 18.9355 76.0772 18.9355C76.6813 18.9355 77.1748 18.8111 77.5579 18.5622C77.9409 18.2986 78.2356 17.9619 78.4418 17.5519L81.0495 18.5622C80.7401 19.1771 80.335 19.7115 79.8341 20.1654C79.3479 20.6046 78.766 20.9414 78.0883 21.1756C77.4106 21.4099 76.6371 21.527 75.7678 21.527ZM73.3811 14.3894H78.1545C78.1103 13.9356 77.963 13.5695 77.7126 13.2914C77.4621 13.0132 77.1675 12.8082 76.8286 12.6764C76.4898 12.5447 76.1583 12.4788 75.8341 12.4788C75.5247 12.4788 75.1859 12.5447 74.8176 12.6764C74.464 12.7936 74.1472 12.9912 73.8673 13.2694C73.6021 13.5476 73.4401 13.9209 73.3811 14.3894Z"/><path d="M82.4937 21.2635V10.2826H85.4107V12.3031C85.8675 11.6149 86.442 11.1025 87.1345 10.7658C87.8416 10.4144 88.5709 10.2387 89.3223 10.2387V13.0498C88.6446 13.0498 88.0037 13.1303 87.3997 13.2914C86.8103 13.4524 86.3315 13.716 85.9632 14.082C85.5949 14.448 85.4107 14.9165 85.4107 15.4875V21.2635H82.4937Z"/><path d="M90.8937 21.2635V10.2826H93.634L93.7666 11.776C94.1202 11.205 94.5695 10.7731 95.1146 10.4803C95.6744 10.1728 96.308 10.0191 97.0151 10.0191C97.8844 10.0191 98.6284 10.1947 99.2471 10.5461C99.8659 10.8975 100.337 11.4466 100.661 12.1933C100.986 12.9253 101.14 13.877 101.126 15.0483V21.2635H98.2085V15.6413C98.2085 14.8946 98.1201 14.3162 97.9433 13.9063C97.7812 13.4963 97.5455 13.2035 97.2361 13.0278C96.9267 12.8375 96.5658 12.7423 96.1533 12.7423C95.4019 12.7277 94.82 12.9546 94.4074 13.4231C94.0097 13.8916 93.8108 14.5871 93.8108 15.5095V21.2635H90.8937Z"/><path d="M103.196 21.2635V10.2826H105.936L106.069 11.7101C106.407 11.1538 106.842 10.7365 107.372 10.4583C107.903 10.1655 108.492 10.0191 109.14 10.0191C110.039 10.0191 110.79 10.2094 111.395 10.5901C112.013 10.9707 112.463 11.5564 112.743 12.347C113.067 11.6003 113.523 11.0293 114.113 10.634C114.702 10.224 115.387 10.0191 116.168 10.0191C117.464 10.0191 118.451 10.429 119.129 11.2489C119.807 12.0542 120.146 13.2987 120.146 14.9824V21.2635H117.229V15.6413C117.229 14.8946 117.148 14.3162 116.986 13.9063C116.824 13.4963 116.603 13.2035 116.323 13.0278C116.043 12.8375 115.711 12.7423 115.328 12.7423C114.621 12.7277 114.076 12.9546 113.693 13.4231C113.31 13.8916 113.118 14.5871 113.118 15.5095V21.2635H110.201V15.6413C110.201 14.8946 110.12 14.3162 109.958 13.9063C109.811 13.4963 109.59 13.2035 109.295 13.0278C109.015 12.8375 108.684 12.7423 108.301 12.7423C107.593 12.7277 107.048 12.9546 106.665 13.4231C106.297 13.8916 106.113 14.5871 106.113 15.5095V21.2635H103.196Z"/><path d="M126.946 21.527C125.856 21.527 124.891 21.2854 124.051 20.8023C123.211 20.3045 122.548 19.6237 122.062 18.7598C121.59 17.896 121.355 16.9004 121.355 15.773C121.355 14.6457 121.598 13.6501 122.084 12.7862C122.585 11.9224 123.263 11.2489 124.117 10.7658C124.986 10.268 125.981 10.0191 127.1 10.0191C128.073 10.0191 128.964 10.2753 129.774 10.7877C130.6 11.2855 131.255 12.0249 131.741 13.0059C132.242 13.9722 132.493 15.1508 132.493 16.5417H124.404C124.478 17.2738 124.795 17.8594 125.355 18.2986C125.915 18.7232 126.548 18.9355 127.255 18.9355C127.859 18.9355 128.353 18.8111 128.736 18.5622C129.119 18.2986 129.414 17.9619 129.62 17.5519L132.227 18.5622C131.918 19.1771 131.513 19.7115 131.012 20.1654C130.526 20.6046 129.944 20.9414 129.266 21.1756C128.588 21.4099 127.815 21.527 126.946 21.527ZM124.559 14.3894H129.332C129.288 13.9356 129.141 13.5695 128.891 13.2914C128.64 13.0132 128.345 12.8082 128.007 12.6764C127.668 12.5447 127.336 12.4788 127.012 12.4788C126.703 12.4788 126.364 12.5447 125.996 12.6764C125.642 12.7936 125.325 12.9912 125.045 13.2694C124.78 13.5476 124.618 13.9209 124.559 14.3894Z"/><path d="M133.93 21.2635V10.2826H136.67L136.803 11.776C137.156 11.205 137.606 10.7731 138.151 10.4803C138.711 10.1728 139.344 10.0191 140.051 10.0191C140.92 10.0191 141.664 10.1947 142.283 10.5461C142.902 10.8975 143.373 11.4466 143.698 12.1933C144.022 12.9253 144.176 13.877 144.162 15.0483V21.2635H141.245V15.6413C141.245 14.8946 141.156 14.3162 140.979 13.9063C140.817 13.4963 140.582 13.2035 140.272 13.0278C139.963 12.8375 139.602 12.7423 139.189 12.7423C138.438 12.7277 137.856 12.9546 137.444 13.4231C137.046 13.8916 136.847 14.5871 136.847 15.5095V21.2635H133.93Z"/><path d="M150.526 21.527C149.303 21.527 148.375 21.2269 147.742 20.6266C147.123 20.0263 146.813 19.1698 146.813 18.0571V12.7423H145.023V10.2826H146.813V6.85656H149.731V10.2826H152.493V12.7423H149.731V17.4202C149.731 17.8887 149.834 18.2474 150.04 18.4963C150.246 18.7306 150.548 18.8477 150.946 18.8477C151.093 18.8477 151.255 18.8184 151.432 18.7598C151.609 18.6866 151.793 18.5841 151.985 18.4524L153.001 20.6266C152.648 20.8901 152.25 21.1024 151.808 21.2635C151.381 21.4392 150.953 21.527 150.526 21.527Z"/><path d="M186.422 21.2635V5.89025H191.66C192.72 5.89025 193.649 6.0513 194.444 6.37341C195.24 6.69551 195.859 7.18599 196.3 7.84485C196.742 8.48906 196.963 9.29432 196.963 10.2606C196.963 10.8609 196.809 11.4173 196.499 11.9297C196.205 12.4275 195.785 12.8594 195.24 13.2255C195.962 13.5915 196.514 14.082 196.897 14.6969C197.295 15.2972 197.494 16.8711 197.494 16.8711C197.494 16.8711 197.28 18.6061 196.853 19.265C196.426 19.9238 195.829 20.4216 195.063 20.7584C194.297 21.0951 193.398 21.2635 192.367 21.2635H186.422ZM189.383 18.6061H192.08C192.801 18.6061 193.369 18.4304 193.781 18.079C194.194 17.713 194.4 17.2298 194.4 16.6296C194.4 16 194.172 15.5095 193.715 15.1581C193.258 14.7921 192.632 14.6091 191.836 14.6091H189.383V18.6061ZM189.383 12.1494H191.726C192.389 12.1494 192.912 11.981 193.295 11.6442C193.678 11.3075 193.87 10.8316 193.87 10.2167C193.87 9.60179 193.656 9.12595 193.229 8.7892C192.801 8.45245 192.22 8.28408 191.483 8.28408H189.383V12.1494Z"/><path d="M202.673 21.527C201.347 21.527 200.316 21.2342 199.58 20.6486C198.858 20.0629 198.497 19.2357 198.497 18.1669C198.497 16.9956 198.887 16.1171 199.668 15.5315C200.464 14.9312 201.576 14.631 203.005 14.631H205.613C205.509 13.9575 205.296 13.4451 204.972 13.0937C204.648 12.7277 204.184 12.5447 203.58 12.5447C203.108 12.5447 202.681 12.6472 202.298 12.8521C201.915 13.0571 201.591 13.3719 201.325 13.7965L198.762 12.918C198.968 12.4495 199.27 11.9956 199.668 11.5564C200.066 11.1025 200.581 10.7365 201.215 10.4583C201.863 10.1655 202.651 10.0191 203.58 10.0191C204.699 10.0191 205.627 10.2314 206.364 10.656C207.115 11.0805 207.668 11.6808 208.021 12.4568C208.39 13.2182 208.566 14.1259 208.552 15.1801L208.485 21.2635H205.767L205.723 19.9897C205.443 20.4875 205.045 20.8682 204.53 21.1317C204.029 21.3953 203.41 21.527 202.673 21.527ZM203.16 19.1112C203.631 19.1112 204.058 19.0014 204.441 18.7818C204.824 18.5622 205.126 18.2767 205.347 17.9253C205.568 17.5739 205.679 17.2079 205.679 16.8272V16.7833H204.021C203.064 16.7833 202.401 16.9004 202.033 17.1347C201.664 17.3543 201.48 17.6691 201.48 18.079C201.48 18.4011 201.627 18.6574 201.922 18.8477C202.217 19.0234 202.629 19.1112 203.16 19.1112Z"/><path d="M210.512 21.2635V10.2826H213.429V12.3031C213.886 11.6149 214.461 11.1025 215.153 10.7658C215.86 10.4144 216.59 10.2387 217.341 10.2387V13.0498C216.663 13.0498 216.022 13.1303 215.418 13.2914C214.829 13.4524 214.35 13.716 213.982 14.082C213.614 14.448 213.429 14.9165 213.429 15.4875V21.2635H210.512Z"/><path d="M224.7 21.527C223.948 21.527 223.293 21.3733 222.733 21.0658C222.173 20.7437 221.702 20.2898 221.318 19.7042L221.208 21.2635H218.446V5.89025H221.363V11.776C221.731 11.205 222.195 10.7731 222.755 10.4803C223.315 10.1728 223.963 10.0191 224.7 10.0191C225.716 10.0191 226.593 10.2533 227.329 10.7218C228.081 11.1904 228.663 11.8565 229.075 12.7204C229.488 13.5695 229.694 14.5871 229.694 15.773C229.694 16.9443 229.488 17.9619 229.075 18.8257C228.663 19.6896 228.081 20.3557 227.329 20.8242C226.593 21.2928 225.716 21.527 224.7 21.527ZM223.948 18.8697C224.479 18.8697 224.943 18.7379 225.34 18.4743C225.753 18.2108 226.077 17.8448 226.313 17.3763C226.549 16.9077 226.666 16.3733 226.666 15.773C226.666 15.1728 226.549 14.6384 226.313 14.1698C226.092 13.7013 225.775 13.3426 225.363 13.0937C224.965 12.8302 224.501 12.6984 223.97 12.6984C223.469 12.6984 223.02 12.8302 222.622 13.0937C222.225 13.3572 221.915 13.7233 221.694 14.1918C221.473 14.6457 221.363 15.1728 221.363 15.773C221.363 16.3733 221.473 16.9077 221.694 17.3763C221.915 17.8448 222.217 18.2108 222.6 18.4743C222.998 18.7379 223.447 18.8697 223.948 18.8697Z"/><path d="M234.674 21.527C233.348 21.527 232.317 21.2342 231.58 20.6486C230.858 20.0629 230.497 19.2357 230.497 18.1669C230.497 16.9956 230.887 16.1171 231.668 15.5315C232.464 14.9312 233.576 14.631 235.005 14.631H237.613C237.51 13.9575 237.296 13.4451 236.972 13.0937C236.648 12.7277 236.184 12.5447 235.58 12.5447C235.108 12.5447 234.681 12.6472 234.298 12.8521C233.915 13.0571 233.591 13.3719 233.326 13.7965L230.762 12.918C230.969 12.4495 231.271 11.9956 231.668 11.5564C232.066 11.1025 232.582 10.7365 233.215 10.4583C233.863 10.1655 234.652 10.0191 235.58 10.0191C236.7 10.0191 237.628 10.2314 238.364 10.656C239.116 11.0805 239.668 11.6808 240.022 12.4568C240.39 13.2182 240.567 14.1259 240.552 15.1801L240.486 21.2635H237.768L237.723 19.9897C237.443 20.4875 237.046 20.8682 236.53 21.1317C236.029 21.3953 235.41 21.527 234.674 21.527ZM235.16 19.1112C235.631 19.1112 236.059 19.0014 236.442 18.7818C236.825 18.5622 237.127 18.2767 237.348 17.9253C237.569 17.5739 237.679 17.2079 237.679 16.8272V16.7833H236.022C235.064 16.7833 234.401 16.9004 234.033 17.1347C233.665 17.3543 233.48 17.6691 233.48 18.079C233.48 18.4011 233.628 18.6574 233.922 18.8477C234.217 19.0234 234.63 19.1112 235.16 19.1112Z"/><path d="M246.758 21.527C245.742 21.527 244.858 21.2928 244.107 20.8242C243.37 20.3557 242.795 19.6896 242.383 18.8257C241.97 17.9619 241.764 16.9443 241.764 15.773C241.764 14.5871 241.97 13.5695 242.383 12.7204C242.795 11.8565 243.37 11.1904 244.107 10.7218C244.858 10.2533 245.742 10.0191 246.758 10.0191C247.48 10.0191 248.121 10.1728 248.681 10.4803C249.256 10.7731 249.72 11.1977 250.073 11.754V5.89025H252.99V21.2635H250.228L250.14 19.7262C249.771 20.2972 249.3 20.7437 248.725 21.0658C248.151 21.3733 247.495 21.527 246.758 21.527ZM247.51 18.8697C247.996 18.8697 248.423 18.7525 248.792 18.5183C249.175 18.2694 249.477 17.9253 249.698 17.4861C249.919 17.0468 250.044 16.549 250.073 15.9927V15.5534C250.044 14.9971 249.919 14.5066 249.698 14.082C249.477 13.6428 249.175 13.306 248.792 13.0717C248.409 12.8228 247.974 12.6984 247.488 12.6984C246.957 12.6984 246.486 12.8302 246.073 13.0937C245.676 13.3426 245.359 13.7013 245.123 14.1698C244.902 14.6384 244.792 15.1728 244.792 15.773C244.792 16.3733 244.909 16.9077 245.145 17.3763C245.381 17.8448 245.698 18.2108 246.095 18.4743C246.508 18.7379 246.979 18.8697 247.51 18.8697Z"/><path d="M260.409 21.527C259.289 21.527 258.287 21.2854 257.403 20.8023C256.534 20.3045 255.849 19.6237 255.348 18.7598C254.862 17.896 254.619 16.9004 254.619 15.773C254.619 14.6457 254.862 13.6501 255.348 12.7862C255.834 11.9224 256.512 11.2489 257.381 10.7658C258.25 10.268 259.245 10.0191 260.364 10.0191C261.499 10.0191 262.501 10.268 263.37 10.7658C264.239 11.2489 264.917 11.9224 265.403 12.7862C265.889 13.6501 266.132 14.6457 266.132 15.773C266.132 16.9004 265.889 17.896 265.403 18.7598C264.917 19.6237 264.239 20.3045 263.37 20.8023C262.515 21.2854 261.528 21.527 260.409 21.527ZM260.409 18.8477C260.954 18.8477 261.433 18.7159 261.845 18.4524C262.258 18.1888 262.574 17.8301 262.795 17.3763C263.031 16.9077 263.149 16.3733 263.149 15.773C263.149 15.1728 263.031 14.6457 262.795 14.1918C262.56 13.7233 262.228 13.3572 261.801 13.0937C261.388 12.8302 260.91 12.6984 260.364 12.6984C259.834 12.6984 259.355 12.8302 258.928 13.0937C258.515 13.3572 258.191 13.7233 257.956 14.1918C257.72 14.6457 257.602 15.1728 257.602 15.773C257.602 16.3733 257.72 16.9077 257.956 17.3763C258.191 17.8301 258.523 18.1888 258.95 18.4524C259.377 18.7159 259.863 18.8477 260.409 18.8477Z"/><path d="M271.536 21.527C270.829 21.527 270.166 21.4245 269.547 21.2196C268.928 20.9999 268.383 20.6925 267.912 20.2972C267.44 19.8872 267.072 19.3894 266.807 18.8038L269.304 17.6618C269.525 18.0131 269.827 18.3206 270.21 18.5841C270.593 18.833 271.035 18.9575 271.536 18.9575C272.022 18.9575 272.398 18.8916 272.663 18.7598C272.928 18.6134 273.061 18.4085 273.061 18.1449C273.061 17.8814 272.95 17.691 272.729 17.5739C272.523 17.4421 272.236 17.3323 271.867 17.2445L270.851 16.9809C269.79 16.7028 268.95 16.2635 268.332 15.6632C267.728 15.0483 267.426 14.3455 267.426 13.5549C267.426 12.4275 267.787 11.5564 268.508 10.9415C269.245 10.3265 270.284 10.0191 271.624 10.0191C272.317 10.0191 272.958 10.1215 273.547 10.3265C274.151 10.5315 274.667 10.817 275.094 11.183C275.521 11.5491 275.816 11.9737 275.978 12.4568L273.569 13.5549C273.466 13.2621 273.216 13.0278 272.818 12.8521C272.42 12.6618 272.022 12.5666 271.624 12.5666C271.227 12.5666 270.917 12.6545 270.696 12.8302C270.49 12.9912 270.387 13.2182 270.387 13.511C270.387 13.7013 270.49 13.8624 270.696 13.9941C270.902 14.1113 271.197 14.2138 271.58 14.3016L273.017 14.653C273.739 14.8287 274.313 15.1142 274.74 15.5095C275.182 15.8902 275.499 16.3221 275.691 16.8052C275.897 17.2738 276 17.735 276 18.1888C276 18.8477 275.801 19.4333 275.403 19.9458C275.02 20.4436 274.49 20.8316 273.812 21.1098C273.149 21.3879 272.39 21.527 271.536 21.527Z"/><path d="M165.302 21.527C164.182 21.527 163.18 21.2855 162.296 20.8023C161.427 20.3045 160.742 19.6237 160.241 18.7598C159.755 17.896 159.512 16.9004 159.512 15.773C159.512 14.6457 159.755 13.6501 160.241 12.7862C160.727 11.9224 161.405 11.2489 162.274 10.7658C163.144 10.268 164.138 10.0191 165.258 10.0191C166.392 10.0191 167.394 10.268 168.263 10.7658C169.132 11.2489 169.81 11.9224 170.296 12.7862C170.782 13.6501 171.026 14.6457 171.026 15.773C171.026 16.9004 170.782 17.896 170.296 18.7598C169.81 19.6237 169.132 20.3045 168.263 20.8023C167.409 21.2855 166.422 21.527 165.302 21.527ZM165.302 18.8477C165.847 18.8477 166.326 18.7159 166.738 18.4524C167.151 18.1888 167.468 17.8301 167.689 17.3763C167.924 16.9077 168.042 16.3733 168.042 15.773C168.042 15.1728 167.924 14.6457 167.689 14.1918C167.453 13.7233 167.121 13.3572 166.694 13.0937C166.282 12.8302 165.803 12.6984 165.258 12.6984C164.727 12.6984 164.249 12.8302 163.821 13.0937C163.409 13.3572 163.085 13.7233 162.849 14.1918C162.613 14.6457 162.495 15.1728 162.495 15.773C162.495 16.3733 162.613 16.9077 162.849 17.3763C163.085 17.8301 163.416 18.1888 163.843 18.4524C164.271 18.7159 164.757 18.8477 165.302 18.8477Z"/><path d="M173.144 21.2635V12.6105H171.309V10.2826H173.144V9.18451C173.144 8.01321 173.446 7.10546 174.05 6.46125C174.654 5.8024 175.574 5.47297 176.812 5.47297C177.239 5.47297 177.689 5.54618 178.16 5.69259C178.646 5.839 179.088 6.0147 179.486 6.21967L178.403 8.30604C178.167 8.18891 177.954 8.10106 177.762 8.04249C177.571 7.98393 177.394 7.95465 177.232 7.95465C176.834 7.95465 176.539 8.09374 176.348 8.37192C176.156 8.63547 176.061 9.06738 176.061 9.66767V10.2826H178.779V12.6105H176.061V21.2635H173.144Z"/><path d="M12.5786 0C11.6253 2.46943 10.6536 5.03986 8.57466 7.00774C9.21998 6.80573 10.3493 6.62461 11.0753 6.64203V17.0283L7.988 17.4636C7.878 17.4532 7.84133 17.2895 7.84133 17.0666C7.54434 13.8413 6.74135 11.1316 5.81736 8.32779C5.75136 7.94466 4.58171 6.48181 5.4837 6.73955C5.5937 6.75348 6.80002 7.2202 6.60935 6.99729C4.96671 5.38119 2.56508 4.21788 0.233112 3.87306C0.0277812 3.8243 -0.0932171 3.92183 0.0901136 4.14822C3.18474 8.6726 5.77336 14.012 5.75136 20.3475C6.95401 20.3475 9.86897 19.6718 11.0753 19.6718V27H12.5969L12.9453 6.53406L12.5786 0Z"/><path d="M12.5786 0C13.5319 2.46943 14.5036 5.03986 16.5825 7.00774C15.9372 6.80573 14.8079 6.62461 14.0819 6.64203V17.0283L17.1692 17.4636C17.2792 17.4532 17.3159 17.2895 17.3159 17.0666C17.6129 13.8413 18.4158 11.1316 19.3398 8.32779C19.4058 7.94466 20.5755 6.48181 19.6735 6.73955C19.5635 6.75348 18.3572 7.2202 18.5478 6.99729C20.1905 5.38119 22.5921 4.21788 24.9241 3.87306C25.1294 3.8243 25.2504 3.92183 25.0671 4.14822C21.9725 8.6726 19.3838 14.012 19.4058 20.3475C18.2032 20.3475 15.2882 19.6718 14.0819 19.6718V27H12.5603L12.2119 6.53406L12.5786 0Z"/></svg>
+      </a>
+    </div>
+  </header>
+</div>
+
+<main class="govbb-page__main">
+  <div class="govbb-status-banner govbb-status-banner--alpha" role="status" aria-label="alpha status banner" aria-live="polite">
+    <div class="govbb-container">
+      <p>This page is in <a class="govbb-link govbb-link--secondary" href="#">Alpha</a>. Pipeline data is local to this browser and does not reach any government system.</p>
+    </div>
+  </div>
+
+  <div class="govbb-container">
+    <div class="proto-shell">
+      <!-- Sidebar -->
+      <aside class="proto-side">
+        <p class="proto-side__heading">A05 Pipeline</p>
+        <div id="nav"></div>
+        <button class="govbb-btn--tertiary" id="seedBtn" style="margin-top: var(--spacing-s);">Reset demo data</button>
+      </aside>
+
+      <!-- Content -->
+      <section class="proto-main" id="app"></section>
+    </div>
+  </div>
+</main>
+
+<footer class="govbb-footer">
+  <div class="govbb-container govbb-footer__inner">
+    <nav class="govbb-footer__nav" aria-label="Footer">
+      <a class="govbb-footer__link" href="#" onclick="nav('home');return false;">Home</a>
+      <a class="govbb-footer__link" href="#" onclick="nav('principles');return false;">Content principles</a>
+      <a class="govbb-footer__link" href="#" onclick="nav('mdas');return false;">MDA registry</a>
+    </nav>
+    <hr class="govbb-footer__divider" aria-hidden="true" />
+    <div class="govbb-footer__end">
+      <svg class="govbb-footer__coat" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Government of Barbados Coat of Arms"><rect width="64" height="64" fill="#00267f"/><path d="M32 8 L12 14 V34 C12 46 22 56 32 60 C42 56 52 46 52 34 V14 Z" fill="#ffc726" stroke="#fff" stroke-width="1"/><path d="M32 20 L24 30 L32 40 L40 30 Z" fill="#00267f"/></svg>
+      <p class="govbb-footer__copy">© 2026 Government of Barbados</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+// =========================================================================
+// CONSTANTS
+// =========================================================================
+const STORAGE_KEY = 'a05_pipeline_v2';
+const TODAY = new Date('2026-05-04');
+
+const STAGES = {
+  'intake':           { label: 'Intake' },
+  'rejected-triage':  { label: 'Rejected (triage)' },
+  'shaping':          { label: 'Shaping' },
+  'generated':        { label: 'Drafted' },
+  'validating-t1':    { label: 'T1 review' },
+  'validating-t2':    { label: 'T2 review' },
+  'needs-rework':     { label: 'Needs rework' },
+  'published':        { label: 'Published' }
+};
+
+// =========================================================================
+// SEED DATA
+// =========================================================================
+function seedData() {
+  return {
+    mdas: [
+      { code: 'NIS', name: 'National Insurance Department', validator: 'Anne Marie King', email: 'amking@nis.gov.bb', backup: 'D. Worrell', backupEmail: 'dworrell@nis.gov.bb' },
+      { code: 'BRA', name: 'Barbados Revenue Authority', validator: 'L. Mottley', email: 'lmottley@bra.gov.bb', backup: '', backupEmail: '' },
+      { code: 'MoH', name: 'Ministry of Health and Wellness', validator: 'A. Forde', email: 'aforde@health.gov.bb', backup: '', backupEmail: '' },
+      { code: 'CRD', name: 'Civil Registration Department', validator: 'M. Greaves', email: 'mgreaves@crd.gov.bb', backup: 'S. Layne', backupEmail: 'slayne@crd.gov.bb' },
+      { code: 'BLP', name: 'Barbados Licensing Authority', validator: 'K. Roach', email: 'kroach@bla.gov.bb', backup: '', backupEmail: '' }
+    ],
+    services: [
+      {
+        id: 's1', serviceName: 'Apply for direct deposit (NIS benefit)',
+        formUrl: 'https://forms.gov.bb/nis/direct-deposit', mdaCode: 'NIS',
+        submittedBy: 'Shayla', submittedAt: '2026-04-21T14:24:00',
+        whatService: 'To authorise the National Insurance and Social Security (NIS) to pay your benefit directly into your bank account. You can also nominate an Alternate Payee to receive payments on your behalf.',
+        whoFor: 'The service is for anyone receiving NIS benefits.',
+        beforeStart: 'Name of financial institution, account number, branch where account was opened, branch transit number',
+        serviceMode: 'Online',
+        whatToHave: 'Account number, branch transit number',
+        costsDeadlines: 'No fees',
+        whatHappensAfter: 'Confirmation email',
+        whatItMeans: 'Apply online',
+        commonConfusion: 'If information is incorrect, payment will be delayed',
+        specialCases: 'None', unusual: 'Branch transit number is needed',
+        notes: 'Are there terms and conditions regarding payees? Can alternate payee be described in simpler terms?',
+        alphaPaths: 'none', alphaShape: 'Simple', alphaDropOff: 'none',
+        stage: 'validating-t2', risk: 'medium',
+        riskReasons: ['Involves bank account information', 'Eligibility tied to NIS recipient status', 'Unanswered MDA question about Alternate Payee terms'],
+        slaDue: '2026-05-11', pageModel: 'separate-no-guidance',
+        history: [
+          { at: '2026-04-21T14:24:00', who: 'Shayla', action: 'Submitted', note: '' },
+          { at: '2026-04-21T14:25:00', who: 'System', action: 'Triage passed', note: 'All required fields present, MDA resolves' },
+          { at: '2026-04-22T09:10:00', who: 'AI Generator', action: 'Drafts produced', note: 'Entry + Start (no Guidance — service is Simple)' },
+          { at: '2026-04-23T11:30:00', who: 'Marisa (Content team)', action: 'T1 approved', note: 'Tightened CTA to "Apply now". Notes question about Alternate Payee left for MDA.' },
+          { at: '2026-04-23T11:32:00', who: 'System', action: 'Sent to T2', note: 'Routed to Anne Marie King (NIS). 5-day SLA.' }
+        ]
+      },
+      {
+        id: 's2', serviceName: 'how to dance', formUrl: '', mdaCode: '', mdaContact: 'Marsh Mellow',
+        submittedBy: 'Fabian', submittedAt: '2026-04-16T13:11:00',
+        whatService: 'to make marshmellows great again', whoFor: 'everyone',
+        beforeStart: 'how many marshmellows are in the bag', serviceMode: 'Partly online',
+        whatToHave: 'a marshmellow license', costsDeadlines: 'no',
+        whatHappensAfter: 'they receive an email', whatItMeans: 'that they need to come in to collect the marshmellow certificate',
+        commonConfusion: 'nothing', specialCases: 'none', unusual: 'nothing',
+        alphaPaths: 'no', alphaShape: 'yes', alphaDropOff: 'none',
+        stage: 'rejected-triage', risk: 'n/a',
+        triageReasons: [
+          'Form URL must reference forms.gov.bb or alpha.gov.bb',
+          'MDA must be selected from the registered list',
+          'Service description contains noise pattern: "marshmellow"',
+          'Service description contains noise pattern: "great again"'
+        ],
+        history: [
+          { at: '2026-04-16T13:11:00', who: 'Fabian', action: 'Submitted', note: '' },
+          { at: '2026-04-16T13:11:30', who: 'System', action: 'Triage failed', note: '4 issues' }
+        ]
+      },
+      {
+        id: 's3', serviceName: 'Sample service (demo)', formUrl: '', mdaCode: '',
+        submittedBy: 'Fabian', submittedAt: '2026-04-20T07:50:00',
+        whatService: 'Demonstration entry for testing the discovery form/database.',
+        whoFor: 'People who need an example row to confirm the database is updating.',
+        beforeStart: '', serviceMode: 'Unknown', whatToHave: '', costsDeadlines: '',
+        whatHappensAfter: 'They receive a confirmation message; next steps are communicated separately.',
+        whatItMeans: '', commonConfusion: '', specialCases: '', unusual: '',
+        notes: 'Created by Notion AI as a visible test row.',
+        alphaPaths: '', alphaShape: '', alphaDropOff: '',
+        stage: 'rejected-triage', risk: 'n/a',
+        triageReasons: [
+          'Form URL must reference forms.gov.bb or alpha.gov.bb',
+          'MDA must be selected from the registered list',
+          'Field "What to have ready" is empty or too short',
+          'Service mode must be Online, In person, or Partly online',
+          'Service description contains noise pattern: "demo"'
+        ],
+        history: [
+          { at: '2026-04-20T07:50:00', who: 'Fabian', action: 'Submitted', note: '' },
+          { at: '2026-04-20T07:50:15', who: 'System', action: 'Triage failed', note: '5 issues' }
+        ]
+      },
+      {
+        id: 's4', serviceName: 'Apply for a Land Tax Rebate',
+        formUrl: 'https://forms.gov.bb/bra/land-tax-rebate', mdaCode: 'BRA',
+        submittedBy: 'Marisa', submittedAt: '2026-04-28T10:15:00',
+        whatService: 'A rebate on land tax for owner-occupied properties. The rebate amount depends on the property value and whether the homeowner meets pensioner criteria.',
+        whoFor: 'Owner-occupiers of residential property in Barbados, with additional rules for pensioners aged 60+.',
+        beforeStart: 'Confirm you are the registered owner. Have your property number ready.',
+        serviceMode: 'Online',
+        whatToHave: 'Property number, proof of owner-occupation, pensioner ID if claiming the pensioner uplift',
+        costsDeadlines: 'No fee. Rebate must be claimed before 30 September each tax year.',
+        whatHappensAfter: 'Confirmation email within 10 working days. Rebate appears on next assessment.',
+        whatItMeans: 'You apply once and the rebate continues year-on-year unless circumstances change.',
+        commonConfusion: 'People often think they need to reapply every year — they do not, unless ownership or occupation changes.',
+        specialCases: 'Pensioner uplift requires separate proof. Joint owners must each apply.',
+        unusual: 'The September deadline is firm — late applications are not backdated.',
+        alphaPaths: 'yes', alphaShape: 'Has paths', alphaDropOff: 'Pensioner uplift documentation step',
+        stage: 'validating-t1', risk: 'high',
+        riskReasons: ['Means-tested (pensioner uplift)', 'Hard deadline with financial consequence', 'Multiple paths', 'Joint ownership rules'],
+        slaDue: '2026-05-05', pageModel: 'separate-with-guidance',
+        history: [
+          { at: '2026-04-28T10:15:00', who: 'Marisa', action: 'Submitted', note: '' },
+          { at: '2026-04-28T10:15:30', who: 'System', action: 'Triage passed', note: '' },
+          { at: '2026-04-28T10:20:00', who: 'AI Generator', action: 'Drafts produced', note: 'Entry + Start + Guidance. HIGH risk — eligibility section flagged for human rewrite.' }
+        ]
+      },
+      {
+        id: 's5', serviceName: 'Register for a covid booster',
+        formUrl: 'https://forms.gov.bb/moh/booster', mdaCode: 'MoH',
+        submittedBy: 'Marisa', submittedAt: '2026-04-12T09:00:00',
+        whatService: 'Book a free COVID-19 booster vaccination at any participating polyclinic.',
+        whoFor: 'Adults aged 18 and over.',
+        beforeStart: 'Check the eligibility window for your last booster — must be at least 6 months ago.',
+        serviceMode: 'Online',
+        whatToHave: 'NIS number, recent vaccination card or record',
+        costsDeadlines: 'Free. No deadline.',
+        whatHappensAfter: 'You will receive a confirmation SMS with your appointment details.',
+        whatItMeans: 'Pick a polyclinic and a 30-minute slot. Walk-ins also accepted.',
+        commonConfusion: '', specialCases: 'Pregnant individuals should consult with a GP first.',
+        unusual: '', alphaPaths: 'no', alphaShape: 'Simple', alphaDropOff: 'none',
+        stage: 'published', risk: 'low',
+        riskReasons: ['Clear eligibility (age 18+)', 'No financial consequence', 'Single path'],
+        pageModel: 'combined-no-guidance',
+        publishedAt: '2026-04-15T16:00:00',
+        publishedUrl: 'https://alpha.gov.bb/health/register-for-a-covid-booster',
+        nextReview: '2026-10-15',
+        history: [
+          { at: '2026-04-12T09:00:00', who: 'Marisa', action: 'Submitted', note: '' },
+          { at: '2026-04-12T09:01:00', who: 'System', action: 'Triage passed', note: '' },
+          { at: '2026-04-12T09:05:00', who: 'AI Generator', action: 'Drafts produced', note: 'Combined Entry+Start. Risk = LOW.' },
+          { at: '2026-04-13T11:00:00', who: 'Marisa (Content team)', action: 'T1 approved', note: '' },
+          { at: '2026-04-15T14:30:00', who: 'A. Forde (MoH)', action: 'T2 approved', note: 'Confirmed eligibility window.' },
+          { at: '2026-04-15T16:00:00', who: 'System', action: 'Published', note: '/health/register-for-a-covid-booster' }
+        ]
+      }
+    ]
+  };
+}
+
+// =========================================================================
+// STATE
+// =========================================================================
+function loadState() {
+  try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) return JSON.parse(raw); } catch (e) {}
+  return seedData();
+}
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function resetState() { state = seedData(); saveState(); render(); }
+let state = loadState();
+
+// =========================================================================
+// HELPERS
+// =========================================================================
+function fmtDate(s) { if (!s) return '—'; return new Date(s).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
+function fmtDateTime(s) { if (!s) return '—'; const d = new Date(s); return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); }
+function daysUntil(s) { if (!s) return null; return Math.ceil((new Date(s) - TODAY) / 86400000); }
+function escapeHtml(s) { if (s == null) return ''; return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function getMda(code) { return state.mdas.find(m => m.code === code); }
+function uid() { return 's' + Math.random().toString(36).slice(2, 9); }
+function slugify(s) { return (s||'').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g,''); }
+function slaClass(due) { const d = daysUntil(due); if (d == null) return ''; if (d < 0) return 'sla-overdue'; if (d <= 1) return 'sla-warn'; return 'sla-ok'; }
+
+// =========================================================================
+// PIPELINE LOGIC (unchanged from v1 — proven by test harness)
+// =========================================================================
+function runTriage(s) {
+  const reasons = [];
+  if (!s.formUrl || !/forms\.gov\.bb|alpha\.gov\.bb/i.test(s.formUrl)) reasons.push('Form URL must reference forms.gov.bb or alpha.gov.bb');
+  if (!s.mdaCode || !getMda(s.mdaCode)) reasons.push('MDA must be selected from the registered list');
+  for (const [k, label] of [['serviceName','Service name'],['whatService','What is this service for?'],['whoFor','Who is this service for?'],['serviceMode','Service mode'],['whatToHave','What to have ready'],['whatHappensAfter','What happens after submit']]) {
+    const v = (s[k]||'').trim(); if (!v || v.length < 3) reasons.push('Field "'+label+'" is empty or too short');
+  }
+  if (s.serviceMode === 'Unknown') reasons.push('Service mode must be Online, In person, or Partly online');
+  const blob = ((s.serviceName||'') + ' ' + (s.whatService||'') + ' ' + (s.whatItMeans||'')).toLowerCase();
+  for (const p of ['marshmellow','marshmallow','great again','lorem ipsum','test test','asdf','demo']) if (blob.includes(p)) reasons.push('Service description contains noise pattern: "'+p+'"');
+  if ((s.whatService||'').length < 30) reasons.push('"What is this service for?" should be at least 30 characters');
+  return { passed: reasons.length === 0, reasons };
+}
+function scoreRisk(s) {
+  let score = 0; const reasons = [];
+  const blob = (Object.values(s).join(' ')||'').toLowerCase();
+  if (/(?<!no\s)(bank|account|payment|deposit|fee|cost)/.test(blob)) { score += 1; reasons.push('Involves money or bank details'); }
+  if (/eligib|means-test|pensioner|age|income/.test(blob)) { score += 2; reasons.push('Has eligibility or means-testing rules'); }
+  if (/deadline|by .* (each|year)|cut[- ]off|late.*(fee|penalty)/.test(blob)) { score += 2; reasons.push('Hard deadline with consequence'); }
+  if (s.alphaPaths && /yes|paths/i.test(s.alphaPaths)) { score += 1; reasons.push('Multiple paths through the service'); }
+  if (s.commonConfusion && s.commonConfusion.length > 20) { score += 1; reasons.push('Has documented common-confusion areas'); }
+  if (s.specialCases && s.specialCases.toLowerCase() !== 'none' && s.specialCases.length > 5) { score += 1; reasons.push('Has special cases or exceptions'); }
+  let level = 'low'; if (score >= 4) level = 'high'; else if (score >= 2) level = 'medium';
+  return { level, reasons };
+}
+function decidePageModel(s) {
+  const hasGuidance = (s.commonConfusion && s.commonConfusion.length > 5 && s.commonConfusion.toLowerCase() !== 'none')
+                  || (s.specialCases && s.specialCases.length > 5 && s.specialCases.toLowerCase() !== 'none')
+                  || (s.unusual && s.unusual.length > 5 && !['none','nothing'].includes((s.unusual||'').toLowerCase()));
+  const isComplex = (s.alphaShape && /paths/i.test(s.alphaShape)) || (s.alphaDropOff && s.alphaDropOff.toLowerCase() !== 'none');
+  if (isComplex && hasGuidance) return 'separate-with-guidance';
+  if (isComplex) return 'separate-no-guidance';
+  if (hasGuidance) return 'combined-with-guidance';
+  return 'combined-no-guidance';
+}
+function generateDrafts(s) {
+  const model = decidePageModel(s);
+  const drafts = {};
+  if (model.startsWith('separate')) {
+    drafts.entry = { title: s.serviceName, summary: s.whatService, whoFor: s.whoFor, cta: { label: 'Start now', target: '#start' } };
+  }
+  drafts.start = {
+    title: s.serviceName,
+    isCombined: model.startsWith('combined'),
+    summary: model.startsWith('combined') ? s.whatService : null,
+    whoFor: model.startsWith('combined') ? s.whoFor : null,
+    beforeYouStart: [
+      'This service is ' + (s.serviceMode||'').toLowerCase() + '.',
+      s.costsDeadlines && !/^no( fees)?$/i.test(s.costsDeadlines) ? s.costsDeadlines : null,
+      s.beforeStart || null
+    ].filter(Boolean),
+    whatYouNeed: (s.whatToHave||'').split(/[,;]/).map(x => x.trim()).filter(Boolean),
+    whatHappensAfter: s.whatHappensAfter, whatItMeans: s.whatItMeans,
+    cta: { label: 'Apply now', target: s.formUrl }
+  };
+  if (model.endsWith('with-guidance')) {
+    drafts.guidance = {
+      title: s.serviceName + ' — guidance',
+      sections: [
+        s.commonConfusion && s.commonConfusion.toLowerCase() !== 'none' ? { heading: 'What people often get wrong', body: s.commonConfusion } : null,
+        s.specialCases && s.specialCases.toLowerCase() !== 'none' ? { heading: 'Special cases and exceptions', body: s.specialCases } : null,
+        s.unusual && !['none','nothing'].includes((s.unusual||'').toLowerCase()) ? { heading: 'Easy to miss', body: s.unusual } : null
+      ].filter(Boolean)
+    };
+  }
+  return { model, drafts };
+}
+function runChecklist(s) {
+  const { drafts } = generateDrafts(s);
+  const checks = [
+    { label: 'Timing rules near the top, standalone', auto: true, pass: (drafts.start.beforeYouStart||[]).length > 0, detail: 'At least one timing/mode line in "Before you start"' },
+    { label: 'Service mode explicit (online / in person / partly online)', auto: true, pass: ['Online','In person','Partly online'].includes(s.serviceMode), detail: 'Detected: ' + s.serviceMode },
+    { label: 'Next step uses a verb users recognise', auto: true, pass: /^(apply|start|register|book|claim|request|submit|get|pay)/i.test(drafts.start.cta.label), detail: 'CTA: "' + drafts.start.cta.label + '"' },
+    { label: 'No CTA duplication (only one start-style CTA before form)', auto: true, pass: !drafts.entry || (drafts.entry.cta.label.toLowerCase() !== drafts.start.cta.label.toLowerCase()), detail: drafts.entry ? 'Entry: "' + drafts.entry.cta.label + '", Start: "' + drafts.start.cta.label + '"' : 'Combined page — only one CTA' },
+    { label: 'Start = essentials only; detail is in Guidance', auto: true, pass: !drafts.guidance ? true : (drafts.start.whatYouNeed.length <= 6 && (s.beforeStart||'').length < 200), detail: drafts.guidance ? 'Start has ' + drafts.start.whatYouNeed.length + ' bullets' : 'No Guidance page needed' },
+    { label: '"Who it\'s for" surfaced or signposted early', auto: true, pass: (s.whoFor||'').length > 10, detail: 'Pulled from "Who is this service for?"' },
+    { label: 'Uses gov.bb design-system component vocabulary', auto: true, pass: true, detail: 'Generator emits govbb-* component classes' },
+    { label: 'Headings & bullets — no buried key points', auto: false, detail: 'T1 reviewer judgement' },
+    { label: 'Mobile scan test passes (what / me? / next?)', auto: false, detail: 'T1 reviewer judgement' },
+    { label: 'Risk score reviewed (high-risk = human-written)', auto: false, detail: 'T1 reviewer judgement' },
+    { label: 'Linked into navigation + life-event taxonomy', auto: false, detail: 'Pre-publish step' },
+    { label: 'Named owner (MDA + GovTech) recorded', auto: false, detail: 'Pre-publish step' }
+  ];
+  return checks;
+}
+function pageModelExplain(m) {
+  return ({
+    'combined-no-guidance':   'Simple service, no different paths and no detailed preparation. Combined Entry+Start with no separate Guidance.',
+    'combined-with-guidance': 'Simple service but enough detail to warrant a separate Guidance page.',
+    'separate-no-guidance':   'Service has different paths or drop-off risks — Entry routes to Start. No Guidance.',
+    'separate-with-guidance': 'Has paths and detailed preparation. Three pages: Entry, Start, Guidance.'
+  })[m] || '';
+}
+
+// =========================================================================
+// ROUTING
+// =========================================================================
+let route = { name: 'home', params: {} };
+function nav(name, params = {}) { route = { name, params }; window.scrollTo(0, 0); render(); }
+
+// =========================================================================
+// SIDEBAR NAV
+// =========================================================================
+function renderNav() {
+  const inboxCount = state.services.filter(s => ['validating-t1','validating-t2','needs-rework'].includes(s.stage)).length;
+  const items = [
+    { id: 'home', label: 'Home' },
+    { id: 'submit', label: 'Submit a service' },
+    { id: 'pipeline', label: 'All services', count: state.services.length },
+    { id: 'inbox', label: 'Validator inbox', count: inboxCount },
+    { id: 'mdas', label: 'MDA registry' },
+    { id: 'principles', label: 'Content principles' }
+  ];
+  return items.map(i => `
+    <a class="proto-nav-link" ${route.name === i.id ? 'aria-current="page"' : ''} onclick="nav('${i.id}');return false;" href="#">
+      ${i.label}
+      ${i.count != null ? '<span class="count">'+i.count+'</span>' : ''}
+    </a>`).join('');
+}
+
+// =========================================================================
+// BREADCRUMBS
+// =========================================================================
+function renderBreadcrumbs(trail) {
+  return `
+    <nav class="govbb-breadcrumbs" aria-label="Breadcrumb">
+      <ol class="govbb-breadcrumbs__list">
+        ${trail.map((t, i) => `
+          <li class="govbb-breadcrumbs__item" ${i === trail.length-1 ? 'aria-current="page"' : ''}>
+            ${i === trail.length-1
+              ? escapeHtml(t.label)
+              : `<a class="govbb-breadcrumbs__link" href="#" onclick="nav('${t.to}'${t.params?","+JSON.stringify(t.params).replace(/"/g,'&quot;'):''});return false;">${escapeHtml(t.label)}</a>`}
+          </li>
+        `).join('')}
+      </ol>
+    </nav>
+  `;
+}
+
+// =========================================================================
+// HOME
+// =========================================================================
+function viewHome() {
+  const counts = {}; Object.keys(STAGES).forEach(k => counts[k] = state.services.filter(s => s.stage === k).length);
+  const inboxCount = (counts['validating-t1']||0) + (counts['validating-t2']||0) + (counts['needs-rework']||0);
+  const recent = [...state.services].sort((a,b) => (b.history.at(-1)?.at||'').localeCompare(a.history.at(-1)?.at||'')).slice(0, 4);
+  return `
+    ${renderBreadcrumbs([{ label: 'Home' }])}
+    <h1 class="govbb-text-display">A05 — Entry Point Pipeline</h1>
+    <p class="govbb-text-body">Generate Entry, Start and Guidance pages for forms that don't yet have them on alpha.gov.bb.</p>
+
+    <div class="proto-grid-2">
+      <a class="proto-tile" onclick="nav('submit');return false;" href="#">
+        <h3 class="govbb-text-h3">Submit a service</h3>
+        <p class="govbb-text-body">Forms team or MDA opens the discovery form and starts a new pipeline run.</p>
+      </a>
+      <a class="proto-tile" onclick="nav('pipeline');return false;" href="#">
+        <h3 class="govbb-text-h3">View status</h3>
+        <p class="govbb-text-body">See every service's current pipeline stage, owner, and SLA.</p>
+      </a>
+      <a class="proto-tile" onclick="nav('inbox');return false;" href="#">
+        <h3 class="govbb-text-h3">Validator inbox <span class="proto-pill pill-stage-validating-t2" style="margin-left:.25rem;">${inboxCount}</span></h3>
+        <p class="govbb-text-body">Items waiting on me — content team or named MDA validator.</p>
+      </a>
+      <a class="proto-tile" onclick="nav('pipeline', { filter: 'published' });return false;" href="#">
+        <h3 class="govbb-text-h3">Update an entry point</h3>
+        <p class="govbb-text-body">Edit a published entry and re-run validation.</p>
+      </a>
+    </div>
+
+    <h2 class="govbb-text-h2">Pipeline at a glance</h2>
+    <div class="proto-grid-4">
+      ${['intake','generated','validating-t1','validating-t2','published','rejected-triage','needs-rework','shaping'].map(k => `
+        <div class="proto-stat">
+          <div class="proto-stat__num">${counts[k]||0}</div>
+          <div class="proto-stat__label">${STAGES[k].label}</div>
+        </div>`).join('')}
+    </div>
+
+    <h2 class="govbb-text-h2">Recent activity</h2>
+    <div style="display:flex;flex-direction:column;gap:var(--spacing-xs);">
+      ${recent.map(s => {
+        const last = s.history.at(-1);
+        return `<div class="proto-card" data-clickable onclick="nav('service',{id:'${s.id}'})">
+          <div style="flex:1;min-width:0;">
+            <a class="govbb-link" href="#" onclick="event.stopPropagation();nav('service',{id:'${s.id}'});return false;"><strong>${escapeHtml(s.serviceName)}</strong></a>
+            <div class="govbb-text-caption">${escapeHtml(last.action)} · ${escapeHtml(last.who)} · ${fmtDateTime(last.at)}</div>
+          </div>
+          <span class="proto-pill pill-stage-${s.stage}">${STAGES[s.stage].label}</span>
+          ${s.risk && s.risk !== 'n/a' ? `<span class="proto-pill pill-risk-${s.risk}">Risk: ${s.risk}</span>` : ''}
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+// =========================================================================
+// SUBMIT FORM (using govbb form-page + form-group / fieldset)
+// =========================================================================
+function viewSubmit() {
+  const d = state.draft || {};
+  return `
+    ${renderBreadcrumbs([{ label: 'Home', to: 'home' }, { label: 'Submit a service' }])}
+
+    <form class="form-page" id="submitForm">
+      <div class="form-page__heading">
+        <span class="form-page__service-title govbb-text-body">A05 Pipeline</span>
+        <h1 class="govbb-text-display">Submit a service for entry-point generation</h1>
+        <p class="govbb-text-body">Each field below is grouped by which page it feeds.
+          <span class="proto-tag tag-entry">ENTRY</span>
+          <span class="proto-tag tag-start">START</span>
+          <span class="proto-tag tag-guidance">GUIDANCE</span>
+          <span class="proto-tag tag-shape">SHAPE</span>
+        </p>
+      </div>
+
+      <fieldset class="proto-fieldset">
+        <legend class="govbb-text-h3">Routing</legend>
+        ${formGroupInput('serviceName','Service name','e.g. Apply for direct deposit', d.serviceName)}
+        ${formGroupInput('formUrl','Form URL on alpha.gov.bb or forms.gov.bb','https://forms.gov.bb/...', d.formUrl)}
+        <div class="govbb-form-group">
+          <label class="govbb-label" for="mdaCode">MDA</label>
+          <p class="govbb-hint" id="mdaCode-hint">Must resolve to a registered ministry</p>
+          <div class="govbb-select-wrapper">
+            <select class="govbb-select" id="mdaCode" name="mdaCode" aria-describedby="mdaCode-hint">
+              <option value="">Select an MDA</option>
+              ${state.mdas.map(m => `<option value="${m.code}" ${d.mdaCode===m.code?'selected':''}>${escapeHtml(m.name)}</option>`).join('')}
+            </select>
+            <span class="govbb-select__chevron" aria-hidden="true"><svg viewBox="0 0 12 8"><path d="M0 8 6 0 12 8z" /></svg></span>
+          </div>
+        </div>
+        ${formGroupInput('submittedBy','Submitted by','Your name', d.submittedBy || 'Adunni')}
+      </fieldset>
+
+      <fieldset class="proto-fieldset">
+        <legend class="govbb-text-h3"><span class="proto-tag tag-entry">ENTRY</span> Routing &amp; "is this me?"</legend>
+        <p class="govbb-hint">These fields shape the page citizens see first. Keep it simple — no document lists or step-by-step here.</p>
+        ${formGroupTextarea('whatService','What is this service for?','A 1–2 sentence description.', d.whatService, 'Entry page summary line')}
+        ${formGroupTextarea('whoFor','Who is this service for?','The audience and any high-level eligibility cues.', d.whoFor, 'Entry page "who its for"')}
+        ${formGroupTextarea('beforeStart','What someone should know before they begin','', d.beforeStart, 'Entry page "before deciding to start"')}
+        <div class="govbb-form-group">
+          <label class="govbb-label" for="serviceMode">Service mode</label>
+          <p class="govbb-hint" id="serviceMode-hint">Online, in person, or partly online — never "Unknown"</p>
+          <div class="govbb-select-wrapper">
+            <select class="govbb-select" id="serviceMode" name="serviceMode" aria-describedby="serviceMode-hint">
+              <option value="">Select mode</option>
+              ${['Online','In person','Partly online','Unknown'].map(m => `<option value="${m}" ${d.serviceMode===m?'selected':''}>${m}</option>`).join('')}
+            </select>
+            <span class="govbb-select__chevron" aria-hidden="true"><svg viewBox="0 0 12 8"><path d="M0 8 6 0 12 8z" /></svg></span>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="proto-fieldset">
+        <legend class="govbb-text-h3"><span class="proto-tag tag-start">START</span> Essentials &amp; the action</legend>
+        <p class="govbb-hint">These feed the "Before you start" and "What you need" sections.</p>
+        ${formGroupTextarea('whatToHave','What to have ready','Comma-separated. e.g. Account number, Branch transit number', d.whatToHave, 'Start page "What you need"')}
+        ${formGroupTextarea('costsDeadlines','Costs, deadlines, appointments and visits','', d.costsDeadlines, 'Start page timing line')}
+        ${formGroupTextarea('whatItMeans','What that means in practice','', d.whatItMeans, 'Start page "What that means"')}
+        ${formGroupTextarea('whatHappensAfter','What happens after someone submits?','', d.whatHappensAfter, 'Start page "What happens after"')}
+      </fieldset>
+
+      <fieldset class="proto-fieldset">
+        <legend class="govbb-text-h3"><span class="proto-tag tag-guidance">GUIDANCE</span> Detail to complete (optional)</legend>
+        <p class="govbb-hint">Leave blank if the service is simple. Filling these triggers a separate Guidance page.</p>
+        ${formGroupTextarea('commonConfusion','Common confusion','', d.commonConfusion, 'Guidance "What people often get wrong"')}
+        ${formGroupTextarea('specialCases','Special cases or exceptions','', d.specialCases, 'Guidance "Special cases"')}
+        ${formGroupTextarea('unusual','Unusual or easy to miss','', d.unusual, 'Guidance "Easy to miss"')}
+      </fieldset>
+
+      <fieldset class="proto-fieldset">
+        <legend class="govbb-text-h3"><span class="proto-tag tag-shape">SHAPE</span> Which pages get created</legend>
+        <p class="govbb-hint">These determine whether to combine Entry+Start, separate them, and whether Guidance is needed.</p>
+        ${formGroupInput('alphaPaths','Are there different paths through the service?','yes / no / brief description', d.alphaPaths)}
+        ${formGroupInput('alphaShape','Service shape','Simple / Has paths / etc.', d.alphaShape)}
+        ${formGroupInput('alphaDropOff','Stuck or drop-off risks','', d.alphaDropOff)}
+      </fieldset>
+
+      <div class="govbb-btn-group">
+        <button class="govbb-btn--secondary" type="button" onclick="nav('home')">Cancel</button>
+        <button class="govbb-btn" type="submit">Submit and run triage</button>
+      </div>
+    </form>
+  `;
+}
+
+function formGroupInput(name, label, hint, value) {
+  const id = 'f-' + name;
+  return `
+    <div class="govbb-form-group">
+      <label class="govbb-label" for="${id}">${escapeHtml(label)}</label>
+      ${hint ? `<p class="govbb-hint" id="${id}-hint">${escapeHtml(hint)}</p>` : ''}
+      <div class="govbb-input-wrapper">
+        <input class="govbb-input" id="${id}" name="${name}" type="text" value="${escapeHtml(value||'')}" ${hint?`aria-describedby="${id}-hint"`:''} />
+      </div>
+    </div>`;
+}
+function formGroupTextarea(name, label, hint, value, destination) {
+  const id = 'f-' + name;
+  return `
+    <div class="proto-field-block ${destinationToColor(destination)}">
+      ${destination ? `<div class="proto-field-block__dest">→ ${escapeHtml(destination)}</div>` : ''}
+      <div class="govbb-form-group" style="margin:0">
+        <label class="govbb-label" for="${id}">${escapeHtml(label)}</label>
+        ${hint ? `<p class="govbb-hint" id="${id}-hint">${escapeHtml(hint)}</p>` : ''}
+        <div class="govbb-input-wrapper">
+          <textarea class="govbb-textarea" id="${id}" name="${name}" rows="3" ${hint?`aria-describedby="${id}-hint"`:''}>${escapeHtml(value||'')}</textarea>
+        </div>
+      </div>
+    </div>`;
+}
+function destinationToColor(d) {
+  if (!d) return '';
+  if (/start/i.test(d)) return 'start';
+  if (/guidance/i.test(d)) return 'guidance';
+  return '';
+}
+
+function handleSubmit(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const s = { id: uid(), submittedAt: new Date().toISOString(), history: [] };
+  for (const [k, v] of fd.entries()) s[k] = v;
+  s.mdaContact = getMda(s.mdaCode)?.validator || '';
+  s.history.push({ at: s.submittedAt, who: s.submittedBy || 'Anonymous', action: 'Submitted', note: '' });
+  const triage = runTriage(s);
+  if (!triage.passed) {
+    s.stage = 'rejected-triage'; s.triageReasons = triage.reasons; s.risk = 'n/a';
+    s.history.push({ at: new Date().toISOString(), who: 'System', action: 'Triage failed', note: triage.reasons.length + ' issues' });
+  } else {
+    const risk = scoreRisk(s);
+    s.risk = risk.level; s.riskReasons = risk.reasons;
+    s.pageModel = decidePageModel(s);
+    s.stage = 'validating-t1';
+    s.slaDue = new Date(Date.now() + 5*86400000).toISOString();
+    s.history.push({ at: new Date().toISOString(), who: 'System', action: 'Triage passed', note: 'All required fields present' });
+    s.history.push({ at: new Date().toISOString(), who: 'AI Generator', action: 'Drafts produced', note: 'Page model: ' + s.pageModel + ', Risk: ' + risk.level });
+    s.history.push({ at: new Date().toISOString(), who: 'System', action: 'Sent to T1 review', note: 'Auto-routed to GovTech content team. 5-day SLA.' });
+  }
+  state.services.push(s);
+  saveState();
+  nav('service', { id: s.id });
+}
+
+// =========================================================================
+// SERVICE DETAIL
+// =========================================================================
+function viewService() {
+  const s = state.services.find(x => x.id === route.params.id);
+  if (!s) return '<p>Service not found.</p>';
+  const mda = getMda(s.mdaCode);
+
+  if (s.stage === 'rejected-triage') return viewRejected(s);
+
+  const { drafts, model } = generateDrafts(s);
+  const checks = runChecklist(s);
+  const isValidatorView = ['validating-t1','validating-t2','needs-rework'].includes(s.stage);
+  const isT1 = s.stage === 'validating-t1';
+  const isT2 = s.stage === 'validating-t2';
+  const isEditing = ui.editingFor === s.id;
+  const isReworking = ui.reworkFor && ui.reworkFor.id === s.id;
+  const t2Role = mda ? mda.validator + ' (' + mda.code + ')' : 'MDA validator';
+
+  return `
+    ${renderBreadcrumbs([{ label: 'Home', to: 'home' }, { label: 'All services', to: 'pipeline' }, { label: s.serviceName }])}
+
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:var(--spacing-s);flex-wrap:wrap;">
+      <div>
+        <h1 class="govbb-text-display">${escapeHtml(s.serviceName)}</h1>
+        <p class="govbb-text-caption">${mda ? escapeHtml(mda.name) : '—'} · Submitted by ${escapeHtml(s.submittedBy)} on ${fmtDate(s.submittedAt)}</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:var(--spacing-xs);align-items:flex-end;">
+        <span class="proto-pill pill-stage-${s.stage}">${STAGES[s.stage].label}</span>
+        ${s.risk && s.risk !== 'n/a' ? `<span class="proto-pill pill-risk-${s.risk}">Risk: ${s.risk}</span>` : ''}
+        ${s.slaDue ? `<span class="govbb-text-caption ${slaClass(s.slaDue)}">SLA: ${fmtDate(s.slaDue)} (${daysUntil(s.slaDue)}d)</span>` : ''}
+      </div>
+    </div>
+
+    ${s.riskReasons && s.riskReasons.length ? `
+      <div class="proto-callout proto-callout--${s.risk==='high'?'error':s.risk==='medium'?'warning':'success'}">
+        <p><strong>Risk: ${s.risk.toUpperCase()}</strong></p>
+        <ul class="govbb-list govbb-list--bullet" style="margin-top:var(--spacing-xs);">${s.riskReasons.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ul>
+        ${s.risk === 'high' ? '<p><strong>High-risk = AI draft is starting point only. Eligibility section must be human-rewritten before publish.</strong></p>' : ''}
+      </div>` : ''}
+
+    ${!isValidatorView ? `
+    <div>
+      <h2 class="govbb-text-h2">Page model</h2>
+      <p class="govbb-text-body"><span class="proto-tag tag-shape">${model}</span> ${pageModelExplain(model)}</p>
+    </div>` : ''}
+
+    <h2 class="govbb-text-h2">${isEditing ? 'Edit drafts' : isValidatorView ? 'Drafts to review' : 'Generated drafts'}</h2>
+    ${isEditing ? renderEditPanel(s) : `
+      ${drafts.entry ? `<div class="proto-preview"><div class="proto-preview__bar"><span class="proto-tag tag-entry">ENTRY</span><span>alpha.gov.bb/${slugify(s.serviceName)}</span></div><div class="preview-frame">${renderEntryPreview(drafts.entry, s)}</div></div>` : ''}
+      <div class="proto-preview"><div class="proto-preview__bar"><span class="proto-tag tag-start">${drafts.start.isCombined?'COMBINED ENTRY+START':'START'}</span><span>alpha.gov.bb/${slugify(s.serviceName)}${drafts.start.isCombined?'':'/start'}</span></div><div class="preview-frame">${renderStartPreview(drafts.start, s)}</div></div>
+      ${drafts.guidance && !isValidatorView ? `<div class="proto-preview"><div class="proto-preview__bar"><span class="proto-tag tag-guidance">GUIDANCE</span><span>alpha.gov.bb/${slugify(s.serviceName)}/guidance</span></div><div class="preview-frame">${renderGuidancePreview(drafts.guidance, s)}</div></div>` : ''}
+    `}
+
+    ${!isValidatorView ? `
+    <h2 class="govbb-text-h2">Acceptance checklist</h2>
+    <div class="proto-checklist">
+      ${checks.map(c => `
+        <div class="proto-checklist__item">
+          <div class="${c.auto ? (c.pass ? 'proto-check-pass' : 'proto-check-fail') : 'proto-check-manual'}">${c.auto ? (c.pass ? '✓' : '✗') : '○'}</div>
+          <div style="flex:1;">
+            <div><strong>${escapeHtml(c.label)}</strong></div>
+            <div class="govbb-text-caption">${c.auto ? 'AUTO' : 'MANUAL · T1'} · ${escapeHtml(c.detail||'')}</div>
+          </div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    ${isReworking ? renderReworkPanel() : `
+    <div class="proto-actions">
+      ${s.stage === 'generated' ? `<button class="govbb-btn" onclick="advanceStage('${s.id}','validating-t1','System','Sent to T1 review')">Send to T1 (content team)</button>` : ''}
+      ${isT1 && !isEditing ? `
+        <button class="govbb-btn" onclick="advanceStage('${s.id}','validating-t2','Content team','T1 approved')">T1 approve → send to MDA</button>
+        <button class="govbb-btn--tertiary" onclick="toggleEdit('${s.id}')">Edit drafts</button>
+        <button class="govbb-btn--secondary" onclick="showRework('${s.id}','Content team')">Return for rework</button>` : ''}
+      ${isT2 && !isEditing ? `
+        <button class="govbb-btn" onclick="advanceStage('${s.id}','published','${escapeHtml(t2Role)}','T2 approved · published')">T2 approve → publish</button>
+        <button class="govbb-btn--tertiary" onclick="toggleEdit('${s.id}')">Edit drafts</button>
+        <button class="govbb-btn--secondary" onclick="showRework('${s.id}','${escapeHtml(t2Role)}')">Return for rework</button>` : ''}
+      ${s.stage === 'needs-rework' ? `<button class="govbb-btn" onclick="advanceStage('${s.id}','validating-t1','Forms team','Resubmitted after rework')">Resubmit to T1</button>` : ''}
+      ${s.stage === 'published' ? `<a class="govbb-btn--secondary" href="${s.publishedUrl||'#'}" target="_blank" rel="noopener">Open live page</a>` : ''}
+    </div>`}
+
+    <h2 class="govbb-text-h2">History</h2>
+    <div class="proto-history">
+      ${[...s.history].reverse().map(h => `
+        <div>
+          <div class="proto-history__title">${escapeHtml(h.action)}</div>
+          <div class="proto-history__meta">${escapeHtml(h.who)} · ${fmtDateTime(h.at)}</div>
+          ${h.note ? `<div class="proto-history__note">${escapeHtml(h.note)}</div>` : ''}
+        </div>`).join('')}
+    </div>
+
+    ${s.stage === 'published' ? `
+      <div class="govbb-feedback-box" style="display:flex;flex-direction:column;align-items:flex-start;gap:var(--spacing-xs);width:100%;padding:var(--spacing-xm) var(--spacing-s);background:var(--color-yellow-40);border:4px solid var(--color-yellow-100);">
+        <h3 class="govbb-text-h3" style="margin:0;">Citizen feedback (last 30 days)</h3>
+        <p class="govbb-text-body" style="margin:0;">"Was this helpful?" — 24 yes, 3 no. Top "no" reason: "I needed help with the document upload step."</p>
+        <a class="govbb-link govbb-link--secondary govbb-text-body" href="#">Open feedback report</a>
+      </div>` : ''}
+  `;
+}
+
+function viewRejected(s) {
+  return `
+    ${renderBreadcrumbs([{ label: 'Home', to: 'home' }, { label: 'All services', to: 'pipeline' }, { label: s.serviceName }])}
+    <h1 class="govbb-text-display">${escapeHtml(s.serviceName)}</h1>
+    <p class="govbb-text-caption">Submitted by ${escapeHtml(s.submittedBy)} on ${fmtDate(s.submittedAt)}</p>
+
+    <div class="govbb-error-summary" role="alert" aria-labelledby="error-summary-title">
+      <h2 id="error-summary-title" class="govbb-error-summary__title">Triage rejected this submission</h2>
+      <ul class="govbb-error-summary__list">
+        ${(s.triageReasons||[]).map(r => `<li><a class="govbb-error-summary__link" href="#">${escapeHtml(r)}</a></li>`).join('')}
+      </ul>
+    </div>
+
+    <p class="govbb-text-body">This submission did not pass the automated triage gate. It has been returned to the submitter rather than going on to AI generation.</p>
+
+    <h2 class="govbb-text-h2">What was submitted</h2>
+    <table class="proto-table">
+      <tbody>
+        <tr><td><strong>Form URL</strong></td><td>${escapeHtml(s.formUrl||'—')}</td></tr>
+        <tr><td><strong>MDA contact</strong></td><td>${escapeHtml(s.mdaContact || (getMda(s.mdaCode)?.name) || '—')}</td></tr>
+        <tr><td><strong>Service mode</strong></td><td>${escapeHtml(s.serviceMode||'—')}</td></tr>
+        <tr><td><strong>What is this service for?</strong></td><td>${escapeHtml(s.whatService||'—')}</td></tr>
+        <tr><td><strong>Who is this service for?</strong></td><td>${escapeHtml(s.whoFor||'—')}</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="govbb-text-h2">History</h2>
+    <div class="proto-history">
+      ${[...s.history].reverse().map(h => `
+        <div>
+          <div class="proto-history__title">${escapeHtml(h.action)}</div>
+          <div class="proto-history__meta">${escapeHtml(h.who)} · ${fmtDateTime(h.at)}</div>
+          ${h.note ? `<div class="proto-history__note">${escapeHtml(h.note)}</div>` : ''}
+        </div>`).join('')}
+    </div>
+  `;
+}
+
+function advanceStage(id, newStage, who, note) {
+  const s = state.services.find(x => x.id === id);
+  if (!s) return;
+  s.stage = newStage;
+  if (newStage === 'published') {
+    s.publishedAt = new Date().toISOString();
+    s.publishedUrl = 'https://alpha.gov.bb/' + slugify(s.serviceName);
+    s.nextReview = new Date(Date.now() + 180*86400000).toISOString();
+  }
+  if (['validating-t1','validating-t2'].includes(newStage)) {
+    s.slaDue = new Date(Date.now() + 5*86400000).toISOString();
+  }
+  s.history.push({ at: new Date().toISOString(), who, action: STAGES[newStage].label, note });
+  saveState();
+  render();
+}
+
+// =========================================================================
+// REVIEW UI — rework feedback panel, inline editing, MDA registration
+// =========================================================================
+let ui = { reworkFor: null, editingFor: null, addingMda: false };
+
+function showRework(id, role) { ui.reworkFor = { id, role }; render(); }
+function cancelRework() { ui.reworkFor = null; render(); }
+function submitRework() {
+  if (!ui.reworkFor) return;
+  const ta = document.getElementById('rework-text');
+  const text = ((ta && ta.value) || '').trim();
+  if (!text) { alert('Please describe what needs to change before this can be approved.'); return; }
+  const r = ui.reworkFor;
+  ui.reworkFor = null;
+  advanceStage(r.id, 'needs-rework', r.role, text);
+}
+
+function toggleEdit(id) { ui.editingFor = ui.editingFor === id ? null : id; render(); }
+function saveEdit(id) {
+  const s = state.services.find(x => x.id === id);
+  if (!s) return;
+  ['whatService','whoFor','beforeStart','whatToHave','costsDeadlines','whatItMeans','whatHappensAfter','commonConfusion','specialCases','unusual'].forEach(f => {
+    const el = document.getElementById('edit-' + f);
+    if (el) s[f] = el.value;
+  });
+  const risk = scoreRisk(s);
+  s.risk = risk.level; s.riskReasons = risk.reasons;
+  s.pageModel = decidePageModel(s);
+  s.history.push({ at: new Date().toISOString(), who: 'Reviewer', action: 'Edited drafts', note: 'Inline edits saved during review' });
+  ui.editingFor = null;
+  saveState();
+  render();
+}
+
+function showAddMda() { ui.addingMda = true; render(); }
+function cancelAddMda() { ui.addingMda = false; render(); }
+function submitAddMda() {
+  const code = (document.getElementById('new-mda-code').value || '').trim().toUpperCase();
+  const name = (document.getElementById('new-mda-name').value || '').trim();
+  const validator = (document.getElementById('new-mda-validator').value || '').trim();
+  const email = (document.getElementById('new-mda-email').value || '').trim();
+  const backup = (document.getElementById('new-mda-backup').value || '').trim();
+  const backupEmail = (document.getElementById('new-mda-backup-email').value || '').trim();
+  if (!code || !name) { alert('MDA code and name are required.'); return; }
+  if (state.mdas.find(m => m.code === code)) { alert('That code is already in use.'); return; }
+  state.mdas.push({ code, name, validator, email, backup, backupEmail });
+  ui.addingMda = false;
+  saveState();
+  render();
+}
+
+function renderReworkPanel() {
+  if (!ui.reworkFor) return '';
+  return `
+    <div class="proto-callout proto-callout--warning" style="margin-top: var(--spacing-s);">
+      <p><strong>Return for rework — feedback to submitter</strong></p>
+      <p style="margin-top: var(--spacing-xs);">Be specific about what needs to change before this can be approved. The submitter will see this in the history.</p>
+      <div class="govbb-form-group" style="margin-top: var(--spacing-s);">
+        <div class="govbb-input-wrapper">
+          <textarea id="rework-text" class="govbb-textarea" rows="4" placeholder="What specifically needs to change?"></textarea>
+        </div>
+      </div>
+      <div class="govbb-btn-group" style="margin-top: var(--spacing-s);">
+        <button class="govbb-btn--destructive" onclick="submitRework()">Send back with feedback</button>
+        <button class="govbb-btn--secondary" onclick="cancelRework()">Cancel</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderEditPanel(s) {
+  const fields = [
+    { name: 'whatService',     label: 'What is this service for? (Entry summary)' },
+    { name: 'whoFor',          label: 'Who is this service for?' },
+    { name: 'beforeStart',     label: 'What to know before starting' },
+    { name: 'whatToHave',      label: 'What to have ready (Start bullets, comma-separated)' },
+    { name: 'costsDeadlines',  label: 'Costs / deadlines (Start timing line)' },
+    { name: 'whatItMeans',     label: 'What that means in practice' },
+    { name: 'whatHappensAfter',label: 'What happens after submit' },
+    { name: 'commonConfusion', label: 'Common confusion (Guidance)' },
+    { name: 'specialCases',    label: 'Special cases (Guidance)' },
+    { name: 'unusual',         label: 'Unusual / easy to miss (Guidance)' }
+  ];
+  return `
+    <div class="proto-callout">
+      <p><strong>Editing live</strong> — changes regenerate the previews. Risk and page model are re-evaluated on save. Edits are noted in the history.</p>
+    </div>
+    ${fields.map(f => `
+      <div class="govbb-form-group">
+        <label class="govbb-label" for="edit-${f.name}">${escapeHtml(f.label)}</label>
+        <div class="govbb-input-wrapper">
+          <textarea class="govbb-textarea" id="edit-${f.name}" rows="3">${escapeHtml(s[f.name]||'')}</textarea>
+        </div>
+      </div>
+    `).join('')}
+    <div class="govbb-btn-group">
+      <button class="govbb-btn" onclick="saveEdit('${s.id}')">Save changes</button>
+      <button class="govbb-btn--secondary" onclick="toggleEdit('${s.id}')">Cancel</button>
+    </div>
+  `;
+}
+
+// =========================================================================
+// LIVE PREVIEW (uses the GOVBB service template structure)
+// =========================================================================
+function renderEntryPreview(e, s) {
+  return `
+    <nav class="govbb-breadcrumbs" aria-label="Breadcrumb">
+      <ol class="govbb-breadcrumbs__list">
+        <li class="govbb-breadcrumbs__item"><a class="govbb-breadcrumbs__link" href="#">Home</a></li>
+        <li class="govbb-breadcrumbs__item"><a class="govbb-breadcrumbs__link" href="#">Services</a></li>
+        <li class="govbb-breadcrumbs__item" aria-current="page">${escapeHtml(e.title)}</li>
+      </ol>
+    </nav>
+    <h1 class="govbb-text-display">${escapeHtml(e.title)}</h1>
+    <div class="govbb-freshness"><p class="govbb-freshness__meta govbb-text-caption">Last updated: ${fmtDate(s.publishedAt || s.submittedAt)}</p></div>
+    <section style="margin-top:var(--spacing-m);">
+      <p class="govbb-text-body">${escapeHtml(e.summary)}</p>
+      <p class="govbb-text-body"><strong>Who this service is for:</strong> ${escapeHtml(e.whoFor)}</p>
+      <a class="govbb-btn" href="#" style="margin-top:var(--spacing-s);">${escapeHtml(e.cta.label)}</a>
+    </section>
+  `;
+}
+
+function renderStartPreview(st, s) {
+  return `
+    <nav class="govbb-breadcrumbs" aria-label="Breadcrumb">
+      <ol class="govbb-breadcrumbs__list">
+        <li class="govbb-breadcrumbs__item"><a class="govbb-breadcrumbs__link" href="#">Home</a></li>
+        <li class="govbb-breadcrumbs__item"><a class="govbb-breadcrumbs__link" href="#">Services</a></li>
+        <li class="govbb-breadcrumbs__item" aria-current="page">${escapeHtml(st.title)}</li>
+      </ol>
+    </nav>
+    <h1 class="govbb-text-display">${escapeHtml(st.title)}</h1>
+    <div class="govbb-freshness"><p class="govbb-freshness__meta govbb-text-caption">Last updated: ${fmtDate(s.publishedAt || s.submittedAt)}</p></div>
+    ${st.isCombined && st.summary ? `<section><h2 class="govbb-text-h2">Overview</h2><p class="govbb-text-body">${escapeHtml(st.summary)}</p>${st.whoFor?`<p class="govbb-text-body"><strong>Who this service is for:</strong> ${escapeHtml(st.whoFor)}</p>`:''}</section>` : ''}
+    <section><h2 class="govbb-text-h2">Before you start</h2>
+      <ul class="govbb-list govbb-list--bullet">${st.beforeYouStart.map(l => `<li>${escapeHtml(l)}</li>`).join('')}</ul>
+    </section>
+    <section><h2 class="govbb-text-h2">What you need</h2>
+      <ul class="govbb-list govbb-list--bullet">${st.whatYouNeed.map(l => `<li>${escapeHtml(l)}</li>`).join('')}</ul>
+    </section>
+    ${st.whatItMeans ? `<section><p class="govbb-text-body" style="border-left:8px solid var(--color-blue-10);padding:var(--spacing-xs) var(--spacing-s);">${escapeHtml(st.whatItMeans)}</p></section>` : ''}
+    <section><h2 class="govbb-text-h2">What happens after you apply</h2>
+      <p class="govbb-text-body">${escapeHtml(st.whatHappensAfter)}</p>
+      <a class="govbb-btn" href="${escapeHtml(st.cta.target||'#')}" style="margin-top:var(--spacing-s);">${escapeHtml(st.cta.label)}</a>
+    </section>
+    <div class="govbb-feedback-box" style="display:flex;flex-direction:column;align-items:flex-start;gap:var(--spacing-xs);width:100%;padding:var(--spacing-xm) var(--spacing-s);background:var(--color-yellow-40);border:4px solid var(--color-yellow-100);margin-top:var(--spacing-m);">
+      <h3 class="govbb-text-h3" style="margin:0;">Was this helpful?</h3>
+      <p class="govbb-text-body" style="margin:0;">Give us your feedback about this page.</p>
+      <a class="govbb-link govbb-link--secondary govbb-text-body" href="#">Help us improve alpha.gov.bb</a>
+    </div>
+  `;
+}
+
+function renderGuidancePreview(g) {
+  return `
+    <nav class="govbb-breadcrumbs" aria-label="Breadcrumb">
+      <ol class="govbb-breadcrumbs__list">
+        <li class="govbb-breadcrumbs__item"><a class="govbb-breadcrumbs__link" href="#">Home</a></li>
+        <li class="govbb-breadcrumbs__item"><a class="govbb-breadcrumbs__link" href="#">Services</a></li>
+        <li class="govbb-breadcrumbs__item" aria-current="page">${escapeHtml(g.title)}</li>
+      </ol>
+    </nav>
+    <h1 class="govbb-text-display">${escapeHtml(g.title)}</h1>
+    ${g.sections.map(sec => `<section><h2 class="govbb-text-h2">${escapeHtml(sec.heading)}</h2><p class="govbb-text-body">${escapeHtml(sec.body)}</p></section>`).join('')}
+  `;
+}
+
+// =========================================================================
+// PIPELINE
+// =========================================================================
+function viewPipeline() {
+  const filter = route.params.filter || 'all';
+  let services = [...state.services];
+  if (filter !== 'all') services = services.filter(s => s.stage === filter);
+  services.sort((a,b) => (b.history.at(-1)?.at||'').localeCompare(a.history.at(-1)?.at||''));
+  return `
+    ${renderBreadcrumbs([{ label: 'Home', to: 'home' }, { label: 'All services' }])}
+    <h1 class="govbb-text-display">All services</h1>
+
+    <div style="display:flex;flex-wrap:wrap;gap:var(--spacing-xs);">
+      ${[['all','All'],['intake','Intake'],['generated','Drafted'],['validating-t1','T1 review'],['validating-t2','T2 review'],['needs-rework','Rework'],['published','Published'],['rejected-triage','Rejected']].map(([f,l]) => {
+        const c = f==='all' ? state.services.length : state.services.filter(s=>s.stage===f).length;
+        return `<button class="${filter===f?'govbb-btn':'govbb-btn--secondary'}" onclick="nav('pipeline',{filter:'${f}'})">${l} (${c})</button>`;
+      }).join('')}
+    </div>
+
+    <table class="proto-table">
+      <thead><tr><th>Service</th><th>MDA</th><th>Stage</th><th>Risk</th><th>SLA</th><th>Last activity</th></tr></thead>
+      <tbody>
+        ${services.map(s => {
+          const mda = getMda(s.mdaCode);
+          const last = s.history.at(-1);
+          return `<tr data-clickable onclick="nav('service',{id:'${s.id}'})">
+            <td><a class="govbb-link" href="#" onclick="event.stopPropagation();nav('service',{id:'${s.id}'});return false;">${escapeHtml(s.serviceName)}</a><div class="govbb-text-caption">${escapeHtml(s.submittedBy||'')}</div></td>
+            <td>${mda?escapeHtml(mda.name):'<span style="color:#d4351c;">unresolved</span>'}</td>
+            <td><span class="proto-pill pill-stage-${s.stage}">${STAGES[s.stage].label}</span></td>
+            <td>${s.risk && s.risk!=='n/a'?`<span class="proto-pill pill-risk-${s.risk}">${s.risk}</span>`:'—'}</td>
+            <td>${s.slaDue?`<span class="${slaClass(s.slaDue)}">${fmtDate(s.slaDue)}</span>`:'—'}</td>
+            <td>${last?escapeHtml(last.action):'—'}<div class="govbb-text-caption">${last?fmtDateTime(last.at):''}</div></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+// =========================================================================
+// VALIDATOR INBOX
+// =========================================================================
+function viewInbox() {
+  const inbox = state.services.filter(s => ['validating-t1','validating-t2','needs-rework'].includes(s.stage));
+  inbox.sort((a,b) => (a.slaDue||'').localeCompare(b.slaDue||''));
+  return `
+    ${renderBreadcrumbs([{ label: 'Home', to: 'home' }, { label: 'Validator inbox' }])}
+    <h1 class="govbb-text-display">Validator inbox</h1>
+    <p class="govbb-text-body">Items waiting on a content-team review (T1) or named MDA validator (T2). Sorted by SLA.</p>
+
+    <div class="proto-callout">
+      <p><strong>How this works.</strong></p>
+      <p>T1 reviews tone, design system, and the acceptance checklist. T2 — the named MDA contact — reviews factual accuracy: eligibility, fees, deadlines, exceptions. Each tier has a 5-day SLA. Backup contacts cover when the primary is on leave.</p>
+    </div>
+
+    ${inbox.length === 0 ? '<p class="govbb-text-body">Inbox is empty.</p>' : `
+      <table class="proto-table">
+        <thead><tr><th>Service</th><th>Tier</th><th>Assigned to</th><th>Risk</th><th>SLA</th><th></th></tr></thead>
+        <tbody>
+          ${inbox.map(s => {
+            const mda = getMda(s.mdaCode);
+            const t1 = s.stage === 'validating-t1', t2 = s.stage === 'validating-t2';
+            const assigned = t1 ? 'GovTech content team' : t2 ? `${mda?mda.validator:''} (${mda?mda.code:''})` : 'Forms team (rework)';
+            return `<tr data-clickable onclick="nav('service',{id:'${s.id}'})">
+              <td><a class="govbb-link" href="#" onclick="event.stopPropagation();nav('service',{id:'${s.id}'});return false;">${escapeHtml(s.serviceName)}</a></td>
+              <td>${t1?'<span class="proto-tag tag-tier1">T1</span>':t2?'<span class="proto-tag tag-tier2">T2</span>':'<span class="proto-tag tag-rework">REWORK</span>'}</td>
+              <td>${escapeHtml(assigned)}</td>
+              <td><span class="proto-pill pill-risk-${s.risk}">${s.risk}</span></td>
+              <td>${s.slaDue?`<span class="${slaClass(s.slaDue)}">${fmtDate(s.slaDue)} (${daysUntil(s.slaDue)}d)</span>`:'—'}</td>
+              <td><button class="govbb-btn--tertiary" onclick="event.stopPropagation();nav('service',{id:'${s.id}'})">Open</button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`}
+  `;
+}
+
+// =========================================================================
+// MDA REGISTRY
+// =========================================================================
+function viewMdas() {
+  return `
+    ${renderBreadcrumbs([{ label: 'Home', to: 'home' }, { label: 'MDA registry' }])}
+    <h1 class="govbb-text-display">MDA registry</h1>
+    <p class="govbb-text-body">Named validator per ministry, with a backup contact. New service submissions must resolve to one of these. New MDAs added here appear immediately in the discovery-form dropdown.</p>
+
+    <div class="govbb-btn-group" style="margin-bottom: var(--spacing-s);">
+      ${ui.addingMda ? '' : '<button class="govbb-btn" onclick="showAddMda()">+ Add new MDA</button>'}
+    </div>
+
+    ${ui.addingMda ? `
+      <div class="proto-callout">
+        <p><strong>Add a new MDA</strong></p>
+        <div class="govbb-form-group">
+          <label class="govbb-label" for="new-mda-code">Code (short, uppercase)</label>
+          <p class="govbb-hint">e.g. BPS, MTW, MEW</p>
+          <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-code" type="text" placeholder="e.g. BPS" /></div>
+        </div>
+        <div class="govbb-form-group">
+          <label class="govbb-label" for="new-mda-name">Ministry / Department name</label>
+          <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-name" type="text" placeholder="e.g. Barbados Postal Service" /></div>
+        </div>
+        <div class="govbb-form-group">
+          <label class="govbb-label" for="new-mda-validator">Primary validator</label>
+          <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-validator" type="text" placeholder="Full name" /></div>
+        </div>
+        <div class="govbb-form-group">
+          <label class="govbb-label" for="new-mda-email">Primary validator email</label>
+          <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-email" type="email" placeholder="name@org.gov.bb" /></div>
+        </div>
+        <div class="govbb-form-group">
+          <label class="govbb-label" for="new-mda-backup">Backup contact (recommended)</label>
+          <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-backup" type="text" placeholder="Full name" /></div>
+        </div>
+        <div class="govbb-form-group">
+          <label class="govbb-label" for="new-mda-backup-email">Backup email</label>
+          <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-backup-email" type="email" placeholder="name@org.gov.bb" /></div>
+        </div>
+        <div class="govbb-btn-group">
+          <button class="govbb-btn" onclick="submitAddMda()">Add MDA</button>
+          <button class="govbb-btn--secondary" onclick="cancelAddMda()">Cancel</button>
+        </div>
+      </div>
+    ` : ''}
+
+    <table class="proto-table">
+      <thead><tr><th>Code</th><th>Ministry / Department</th><th>Primary validator</th><th>Backup</th><th>Services</th></tr></thead>
+      <tbody>
+        ${state.mdas.map(m => {
+          const count = state.services.filter(s => s.mdaCode === m.code).length;
+          return `<tr>
+            <td><span class="proto-tag tag-shape">${m.code}</span></td>
+            <td>${escapeHtml(m.name)}</td>
+            <td>${escapeHtml(m.validator)}<div class="govbb-text-caption">${escapeHtml(m.email)}</div></td>
+            <td>${m.backup?escapeHtml(m.backup):'<span style="color:#d4351c;">— missing —</span>'}<div class="govbb-text-caption">${escapeHtml(m.backupEmail||'')}</div></td>
+            <td>${count}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+
+    <div class="proto-callout proto-callout--warning" style="margin-top: var(--spacing-s);">
+      <p><strong>Gap to close.</strong></p>
+      <p>Some ministries have no backup contact. A single person on leave will block their entire validation queue. Add backups before scaling.</p>
+    </div>
+  `;
+}
+
+// =========================================================================
+// PRINCIPLES
+// =========================================================================
+function viewPrinciples() {
+  return `
+    ${renderBreadcrumbs([{ label: 'Home', to: 'home' }, { label: 'Content principles' }])}
+    <h1 class="govbb-text-display">Content principles (built into the pipeline)</h1>
+    <p class="govbb-text-body">These come from the alpha.gov.bb Content Design Principles guide. The generator and the acceptance checklist enforce them automatically.</p>
+
+    <h2 class="govbb-text-h2">The page model</h2>
+    <p class="govbb-text-body">Default: <strong>Entry → Start → Guidance</strong>. Pages can be merged when content stays light. The shape decision is driven by the SHAPE fields on the discovery form.</p>
+
+    <h2 class="govbb-text-h2">Must-haves enforced by the system</h2>
+    <ul class="govbb-list govbb-list--bullet">
+      <li>Timing rules near the top as standalone lines</li>
+      <li>Service mode (online / in person / partly online) explicit</li>
+      <li>Primary action uses a verb users recognise</li>
+      <li>Start page = essentials only; detail moves into Guidance</li>
+      <li>No CTA duplication before the form</li>
+      <li>Mobile scan test passes (what / is this me / next step)</li>
+    </ul>
+
+    <h2 class="govbb-text-h2">What the AI never decides</h2>
+    <p class="govbb-text-body">Whether a service is genuinely simple, whether eligibility is being communicated clearly, whether a deadline has financial consequences. Those judgements stay with the named MDA validator.</p>
+  `;
+}
+
+// =========================================================================
+// MAIN RENDER
+// =========================================================================
+function render() {
+  document.getElementById('nav').innerHTML = renderNav();
+  const app = document.getElementById('app');
+  switch (route.name) {
+    case 'home': app.innerHTML = viewHome(); break;
+    case 'submit': app.innerHTML = viewSubmit(); document.getElementById('submitForm').addEventListener('submit', handleSubmit); break;
+    case 'service': app.innerHTML = viewService(); break;
+    case 'pipeline': app.innerHTML = viewPipeline(); break;
+    case 'inbox': app.innerHTML = viewInbox(); break;
+    case 'mdas': app.innerHTML = viewMdas(); break;
+    case 'principles': app.innerHTML = viewPrinciples(); break;
+    default: app.innerHTML = viewHome();
+  }
+}
+
+document.getElementById('seedBtn').addEventListener('click', () => {
+  if (confirm('Reset to demo data? This will delete any submissions you have added.')) resetState();
+});
+
+render();
+</script>
+</body>
+</html>
