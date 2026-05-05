@@ -489,7 +489,7 @@ function seedData() {
         alphaPaths: 'no', alphaShape: 'yes', alphaDropOff: 'none',
         stage: 'rejected-triage', risk: 'n/a',
         triageReasons: [
-          'Form URL must reference forms.gov.bb or alpha.gov.bb',
+          'Form URL must be a valid URL (https://…)',
           'MDA must be selected from the registered list',
           'Service description contains noise pattern: "marshmellow"',
           'Service description contains noise pattern: "great again"'
@@ -511,7 +511,7 @@ function seedData() {
         alphaPaths: '', alphaShape: '', alphaDropOff: '',
         stage: 'rejected-triage', risk: 'n/a',
         triageReasons: [
-          'Form URL must reference forms.gov.bb or alpha.gov.bb',
+          'Form URL must be a valid URL (https://…)',
           'MDA must be selected from the registered list',
           'Field "What to have ready" is empty or too short',
           'Service mode must be Online, In person, or Partly online',
@@ -608,7 +608,7 @@ function slaClass(due) { const d = daysUntil(due); if (d == null) return ''; if 
 // =========================================================================
 function runTriage(s) {
   const reasons = [];
-  if (!s.formUrl || !/forms\.gov\.bb|alpha\.gov\.bb/i.test(s.formUrl)) reasons.push('Form URL must reference forms.gov.bb or alpha.gov.bb');
+  if (!s.formUrl || !/^https?:\/\/.+\..+/i.test(s.formUrl)) reasons.push('Form URL must be a valid URL (https://…)');
   if (!s.mdaCode || !getMda(s.mdaCode)) reasons.push('MDA must be selected from the registered list');
   for (const [k, label] of [['serviceName','Service name'],['whatService','What is this service for?'],['whoFor','Who is this service for?'],['serviceMode','Service mode'],['whatToHave','What to have ready'],['whatHappensAfter','What happens after submit']]) {
     const v = (s[k]||'').trim(); if (!v || v.length < 3) reasons.push('Field "'+label+'" is empty or too short');
@@ -1817,3 +1817,4 @@ render();
 </script>
 </body>
 </html>
+                                         
