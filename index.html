@@ -714,6 +714,7 @@ function renderNav() {
   const items = [
     { id: 'home', label: 'Home' },
     { id: 'submit', label: 'Submit a service' },
+    { id: 'upload', label: 'Generate from form' },
     { id: 'pipeline', label: 'All services', count: state.services.length },
     { id: 'inbox', label: 'Validator inbox', count: inboxCount },
     { id: 'mdas', label: 'MDA registry' },
@@ -761,6 +762,10 @@ function viewHome() {
       <a class="proto-tile" onclick="nav('submit');return false;" href="#">
         <h3 class="govbb-text-h3">Submit a service</h3>
         <p class="govbb-text-body">Forms team or MDA opens the discovery form and starts a new pipeline run.</p>
+      </a>
+      <a class="proto-tile" onclick="nav('upload');return false;" href="#">
+        <h3 class="govbb-text-h3">Generate from a form</h3>
+        <p class="govbb-text-body">Upload a PDF, Word doc, scan, or paste a URL — AI reads the form and drafts the entry pages straight into T1 review.</p>
       </a>
       <a class="proto-tile" onclick="nav('pipeline');return false;" href="#">
         <h3 class="govbb-text-h3">View status</h3>
@@ -1451,28 +1456,20 @@ function viewPrinciples() {
 }
 
 // =========================================================================
-// MAIN RENDER
+// FORM UPLOAD — actual parsing of PDF, DOCX, image, HTML, URL
 // =========================================================================
-function render() {
-  document.getElementById('nav').innerHTML = renderNav();
-  const app = document.getElementById('app');
-  switch (route.name) {
-    case 'home': app.innerHTML = viewHome(); break;
-    case 'submit': app.innerHTML = viewSubmit(); document.getElementById('submitForm').addEventListener('submit', handleSubmit); break;
-    case 'service': app.innerHTML = viewService(); break;
-    case 'pipeline': app.innerHTML = viewPipeline(); break;
-    case 'inbox': app.innerHTML = viewInbox(); break;
-    case 'mdas': app.innerHTML = viewMdas(); break;
-    case 'principles': app.innerHTML = viewPrinciples(); break;
-    default: app.innerHTML = viewHome();
-  }
+let uploadStatus = '';
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector('script[data-loaded-src="' + src + '"]')) return resolve();
+    const sc = document.createElement('script');
+    sc.src = src;
+    sc.dataset.loadedSrc = src;
+    sc.onload = () => resolve();
+    sc.onerror = () => reject(new Error('Failed to load ' + src));
+    document.head.appendChild(sc);
+  });
 }
-
-document.getElementById('seedBtn').addEventListener('click', () => {
-  if (confirm('Reset to demo data? This will delete any submissions you have added.')) resetState();
-});
-
-render();
-</script>
-</body>
-</html>
+async function loadPdfJs() {
+  if (window.pdfjsLi
