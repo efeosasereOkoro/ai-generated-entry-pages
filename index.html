@@ -1544,16 +1544,63 @@ async function fetchFormUrlWithMeta(url) {
   const html = await res.text();
   let title = '';
   let text = '';
+  let formFields = [];
+  let headings = [];
+  let intro = '';
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
+    // Remove noise: scripts, styles, nav, footer, header, hidden elements, comments
+    doc.querySelectorAll('script, style, noscript, nav, footer, header, [hidden], [aria-hidden="true"], .footer, .nav, .header, .cookie, [role="navigation"], [role="contentinfo"]').forEach(el => el.remove());
+
     title = (doc.querySelector('h1')?.textContent || doc.title || '').trim().replace(/\s+/g, ' ');
-    text = (doc.body?.textContent || '').replace(/\s+/g, ' ').trim();
+
+    // Form labels = "What you need" — the fields a citizen actually has to fill in
+    formFields = Array.from(doc.querySelectorAll('label')).map(l => {
+      let t = l.textContent.replace(/\*+\s*$/, '').replace(/\(required\)/i, '').replace(/\s+/g, ' ').trim();
+      // Drop labels that are obviously not form fields (radio option text, etc.)
+      return t;
+    }).filter(t => t.length > 2 && t.length < 80 && !/^(yes|no|other|n\/a)$/i.test(t));
+    // Dedupe
+    formFields = Array.from(new Set(formFields));
+
+    // Section headings give structural hints
+    headings = Array.from(doc.querySelectorAll('h2, h3')).map(h => h.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean);
+
+    // The first substantive paragraph after the H1 is usually the service summary
+    const firstP = doc.querySelector('main p, [role="main"] p, article p, form p, body p');
+    intro = (firstP?.textContent || '').replace(/\s+/g, ' ').trim();
+
+    // Body text — prefer main/form/article, exclude nav/footer
+    const main = doc.querySelector('main, [role="main"], form, article') || doc.body;
+    text = (main?.textContent || '').replace(/\s+/g, ' ').trim();
   } catch (e) {
-    const tmp = document.createElement('div'); tmp.innerHTML = html;
+    // Regex fallback: strip scripts/styles, then read text
+    const cleaned = html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<!--[\s\S]*?-->/g, '');
+    const tmp = document.createElement('div'); tmp.innerHTML = cleaned;
     text = tmp.textContent.replace(/\s+/g, ' ').trim();
   }
-  return { text, title, html };
+  return { text, title, html, formFields, headings, intro };
+}
+
+// Detects strings that are JS/CSS code or template gibberish, not real content
+function looksLikeCode(s) {
+  if (!s) return false;
+  return /\b(const|let|var|function|return|if\s*\(|errors\.push|D\[|new Date\(|\.padStart|=\s*['"`]|=>\s|\$\{|\}\$|\}\)|Z?a-z|\.svg|\.png\b)/.test(s)
+      || /[{}<>;]\s*[{}<>;]/.test(s)
+      || /^[\s\-_=]+$/.test(s);
+}
+
+function cleanSentence(s) {
+  if (!s) return '';
+  // Remove anything that looks like inline code fragments
+  return s.replace(/\b(const|let|var)\s+[A-Za-z_]+\s*=[\s\S]*?$/g, '')
+          .replace(/[{}`]+/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
 }
 
 function inferServiceName(formMeta, urlString) {
@@ -1581,37 +1628,51 @@ function inferServiceMode(text) {
   return 'Online';
 }
 
-function extractFieldsFromText(rawText, hints) {
+function extractFieldsFromText(rawText, hints, formMeta) {
   const text = rawText.replace(/\s+/g, ' ').trim();
-  const sentences = text.split(/(?<=[.!?])\s/).filter(s => s.length > 10);
-  const findSentence = (re, fallback) => { const m = sentences.find(s => re.test(s)); return m ? m.trim() : fallback; };
-  const findBlock = (re, fallback) => { const m = text.match(re); return m ? (m[1]||m[0]).trim() : fallback; };
+  // Only consider sentences that look like real content (not code, not nav junk)
+  const sentences = text.split(/(?<=[.!?])\s/)
+    .map(s => cleanSentence(s))
+    .filter(s => s.length > 15 && s.length < 400 && !looksLikeCode(s)
+                 && !/cookie policy|terms\s*&\s*conditions|sitemap|©\s*\d{4}|government of barbados$/i.test(s)
+                 && /[a-z]\s[a-z]/i.test(s));
 
-  const whatService = findSentence(
-    /apply for|application for|use this form|claim|register for|request|submit/i,
-    hints.serviceName + ' application. Use this form to apply for ' + hints.serviceName.toLowerCase() + '.'
-  ).slice(0, 350);
+  const findSentence = (re, fallback) => { const m = sentences.find(s => re.test(s)); return m ? m.trim() : fallback; };
+
+  // Service description: prefer the intro paragraph if it's clean
+  let whatService = '';
+  if (formMeta?.intro && formMeta.intro.length > 25 && !looksLikeCode(formMeta.intro)) {
+    whatService = cleanSentence(formMeta.intro).slice(0, 350);
+  } else {
+    whatService = findSentence(
+      /apply for|application for|use this form|claim|register for|request|submit|notify|update your/i,
+      hints.serviceName + '. Use this form to ' + hints.serviceName.toLowerCase() + '.'
+    ).slice(0, 350);
+  }
 
   const whoFor = findSentence(
-    /eligibility|eligible|who can apply|applicants must|you (?:must|need to) be|residents|citizens|aged/i,
-    hints.serviceName + ' applicants in Barbados.'
+    /eligibility|eligible|who can apply|applicants must|you (?:must|need to) be|residents|citizens|aged|recipients?|contributors?|members? of/i,
+    'Applicants relevant to ' + hints.serviceName.toLowerCase() + '.'
   ).slice(0, 350);
 
-  const bulletRe = /(?:[•●\-\*]|\n\s*\d+[.)]|\n\s*[a-z][.)])\s*([A-Z][^\n]{4,80})/g;
-  const bullets = [];
-  let bm;
-  while ((bm = bulletRe.exec(rawText)) && bullets.length < 8) {
-    const item = bm[1].trim().replace(/[.,;]+$/, '');
-    if (item && !bullets.includes(item)) bullets.push(item);
-  }
+  // What to have ready: prefer real form labels from the page if present
   let whatToHave;
-  if (bullets.length >= 2) {
-    whatToHave = bullets.slice(0, 6).join(', ');
+  if (formMeta?.formFields && formMeta.formFields.length >= 2) {
+    whatToHave = formMeta.formFields.slice(0, 8).join(', ');
   } else {
-    whatToHave = findBlock(
-      /(?:documents required|you must provide|please bring|required documents|attach|supporting documents)[:\s]*([^.]{20,400})/i,
-      'Identification document, supporting evidence relevant to your application'
-    );
+    // Fall back to bullet detection but reject code-looking items
+    const bulletRe = /(?:[•●]|\n\s*\d+[.)]|\n\s*[a-z][.)])\s*([A-Z][^\n]{4,80})/g;
+    const bullets = [];
+    let bm;
+    while ((bm = bulletRe.exec(rawText)) && bullets.length < 8) {
+      const item = bm[1].trim().replace(/[.,;]+$/, '');
+      if (item && !bullets.includes(item) && !looksLikeCode(item)) bullets.push(item);
+    }
+    if (bullets.length >= 2) {
+      whatToHave = bullets.slice(0, 6).join(', ');
+    } else {
+      whatToHave = 'Identification document, supporting evidence relevant to your application';
+    }
   }
 
   const costsDeadlines = findSentence(
@@ -1629,8 +1690,16 @@ function extractFieldsFromText(rawText, hints) {
      hints.serviceMode === 'Partly online' ? 'online and complete remaining steps in person' :
      'in person at the issuing department') + '.';
 
-  const specialCases = findBlock(/(?:exception|special case|unless|except|if you (?:are|have))[^.]{20,300}\./i, '');
-  const unusual = findBlock(/(?:please note|important[: ]|note that|warning|caution)[^.]{20,300}\./i, '');
+  const specialCases = (() => {
+    const m = text.match(/(?:exception|special case|unless|except|if you (?:are|have))[^.]{20,300}\./i);
+    const v = m ? cleanSentence(m[0]) : '';
+    return looksLikeCode(v) ? '' : v;
+  })();
+  const unusual = (() => {
+    const m = text.match(/(?:please note|important[: ]|note that|warning|caution)[^.]{20,300}\./i);
+    const v = m ? cleanSentence(m[0]) : '';
+    return looksLikeCode(v) ? '' : v;
+  })();
 
   return {
     serviceName: hints.serviceName, mdaCode: hints.mdaCode, serviceMode: hints.serviceMode,
@@ -1750,6 +1819,10 @@ async function handleUploadGenerate() {
       serviceName: inferredName,
       mdaCode,
       serviceMode: inferredMode
+    }, {
+      formFields: formData.formFields || [],
+      headings: formData.headings || [],
+      intro: formData.intro || ''
     });
 
     const s = Object.assign({
@@ -1775,7 +1848,7 @@ async function handleUploadGenerate() {
       s.pageModel = decidePageModel(s);
       s.stage = 'validating-t1';
       s.slaDue = new Date(Date.now() + 5*86400000).toISOString();
-      s.history.push({ at: new Date().toISOString(), who: 'AI', action: 'Inferred service details', note: 'Service name: "' + inferredName + '" · Mode: ' + inferredMode + (mdaContext ? ' · MDA website: consulted' : ' · MDA website: not reachable') });
+      s.history.push({ at: new Date().toISOString(), who: 'AI', action: 'Inferred service details', note: 'Service name: "' + inferredName + '" · Mode: ' + inferredMode + (mdaContext ? ' · MDA website: consulted' : ' · MDA website: not reachable') + ' · Form fields detected: ' + (formData.formFields ? formData.formFields.length : 0) });
       s.history.push({ at: new Date().toISOString(), who: 'System', action: 'Triage passed', note: 'All required fields present' });
       s.history.push({ at: new Date().toISOString(), who: 'AI Generator', action: 'Drafts produced from form', note: 'Page model: ' + s.pageModel + ', Risk: ' + risk.level });
       s.history.push({ at: new Date().toISOString(), who: 'System', action: 'Sent to T1 review', note: 'Auto-routed to GovTech content team. 5-day SLA.' });
@@ -1817,4 +1890,3 @@ render();
 </script>
 </body>
 </html>
-                                         
