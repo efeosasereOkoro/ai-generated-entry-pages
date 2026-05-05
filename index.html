@@ -462,7 +462,6 @@
 // CONSTANTS
 // =========================================================================
 const STORAGE_KEY = 'a05_pipeline_v2';
-const PRINCIPLES_KEY = 'a05_principles_v1';
 const TODAY = new Date('2026-05-04');
 
 function defaultPrinciples() {
@@ -647,7 +646,6 @@ function loadState() {
 function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 function resetState() { state = seedData(); saveState(); render(); }
 let state = loadState();
-let principles = loadPrinciples();
 
 // =========================================================================
 // HELPERS
@@ -1599,12 +1597,27 @@ function viewPrinciples() {
           <button class="govbb-btn--secondary" onclick="closePrincipleEditModal()">Cancel</button>
         </div>
       </div>
+      <div class="govbb-btn-group" style="margin-top: var(--spacing-s);">
+        <button class="govbb-btn--destructive" onclick="submitRework()">Send back with feedback</button>
+        <button class="govbb-btn--secondary" onclick="cancelRework()">Cancel</button>
+      </div>
     </div>
   `;
 }
 
-function renderPrincipleCard(pr, idx) {
-  const isCollapsed = pr.collapsed;
+function renderEditPanel(s) {
+  const fields = [
+    { name: 'whatService',     label: 'What is this service for? (Entry summary)' },
+    { name: 'whoFor',          label: 'Who is this service for?' },
+    { name: 'beforeStart',     label: 'What to know before starting' },
+    { name: 'whatToHave',      label: 'What to have ready (Start bullets, comma-separated)' },
+    { name: 'costsDeadlines',  label: 'Costs / deadlines (Start timing line)' },
+    { name: 'whatItMeans',     label: 'What that means in practice' },
+    { name: 'whatHappensAfter',label: 'What happens after submit' },
+    { name: 'commonConfusion', label: 'Common confusion (Guidance)' },
+    { name: 'specialCases',    label: 'Special cases (Guidance)' },
+    { name: 'unusual',         label: 'Unusual / easy to miss (Guidance)' }
+  ];
   return `
     <div class="pc-card" id="pc-${escapeHtml(pr.id)}">
       <div class="pc-card__header" onclick="togglePrincipleCollapse('${pr.id}')">
