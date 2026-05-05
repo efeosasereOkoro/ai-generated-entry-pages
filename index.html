@@ -1472,4 +1472,304 @@ function loadScript(src) {
   });
 }
 async function loadPdfJs() {
-  if (window.pdfjsLi
+  if (window.pdfjsLib) return window.pdfjsLib;
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  return window.pdfjsLib;
+}
+async function loadMammoth() {
+  if (window.mammoth) return window.mammoth;
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
+  return window.mammoth;
+}
+async function loadTesseract() {
+  if (window.Tesseract) return window.Tesseract;
+  await loadScript('https://unpkg.com/tesseract.js@5/dist/tesseract.min.js');
+  return window.Tesseract;
+}
+
+async function parsePdf(file) {
+  const lib = await loadPdfJs();
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await lib.getDocument({ data: arrayBuffer }).promise;
+  let text = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(it => it.str).join(' ') + '\n';
+  }
+  return text;
+}
+async function parseDocx(file) {
+  const m = await loadMammoth();
+  const arrayBuffer = await file.arrayBuffer();
+  const result = await m.extractRawText({ arrayBuffer });
+  return result.value;
+}
+async function parseImage(file, onProgress) {
+  const T = await loadTesseract();
+  const result = await T.recognize(file, 'eng', { logger: msg => onProgress && onProgress(msg) });
+  return result.data.text;
+}
+async function parseHtmlFile(file) {
+  const text = await file.text();
+  const tmp = document.createElement('div'); tmp.innerHTML = text;
+  return tmp.textContent.replace(/\s+/g, ' ').trim();
+}
+async function fetchFormUrl(url) {
+  const res = await fetch(url, { mode: 'cors' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const text = await res.text();
+  const tmp = document.createElement('div'); tmp.innerHTML = text;
+  return tmp.textContent.replace(/\s+/g, ' ').trim();
+}
+
+function extractFieldsFromText(rawText, hints) {
+  const text = rawText.replace(/\s+/g, ' ').trim();
+  const sentences = text.split(/(?<=[.!?])\s/).filter(s => s.length > 10);
+  const findSentence = (re, fallback) => { const m = sentences.find(s => re.test(s)); return m ? m.trim() : fallback; };
+  const findBlock = (re, fallback) => { const m = text.match(re); return m ? (m[1]||m[0]).trim() : fallback; };
+
+  const whatService = findSentence(
+    /apply for|application for|use this form|claim|register for|request|submit/i,
+    hints.serviceName + ' application. Use this form to apply for ' + hints.serviceName.toLowerCase() + '.'
+  ).slice(0, 350);
+
+  const whoFor = findSentence(
+    /eligibility|eligible|who can apply|applicants must|you (?:must|need to) be|residents|citizens|aged/i,
+    hints.serviceName + ' applicants in Barbados.'
+  ).slice(0, 350);
+
+  const bulletRe = /(?:[•●\-\*]|\n\s*\d+[.)]|\n\s*[a-z][.)])\s*([A-Z][^\n]{4,80})/g;
+  const bullets = [];
+  let bm;
+  while ((bm = bulletRe.exec(rawText)) && bullets.length < 8) {
+    const item = bm[1].trim().replace(/[.,;]+$/, '');
+    if (item && !bullets.includes(item)) bullets.push(item);
+  }
+  let whatToHave;
+  if (bullets.length >= 2) {
+    whatToHave = bullets.slice(0, 6).join(', ');
+  } else {
+    whatToHave = findBlock(
+      /(?:documents required|you must provide|please bring|required documents|attach|supporting documents)[:\s]*([^.]{20,400})/i,
+      'Identification document, supporting evidence relevant to your application'
+    );
+  }
+
+  const costsDeadlines = findSentence(
+    /\b(?:fee|cost|charge|deadline|due date|by\s+\d|within\s+\d+\s+(?:days|weeks|months)|late|expir)/i,
+    'Check the form for any applicable fees or deadlines.'
+  ).slice(0, 250);
+
+  const whatHappensAfter = findSentence(
+    /after submitting|once submitted|you will receive|next steps|processing time|confirmation|approved|decision/i,
+    'You will receive a confirmation. Your application will be processed by the issuing department.'
+  ).slice(0, 300);
+
+  const whatItMeans = 'Complete and submit this form ' +
+    (hints.serviceMode === 'Online' ? 'online' :
+     hints.serviceMode === 'Partly online' ? 'online and complete remaining steps in person' :
+     'in person at the issuing department') + '.';
+
+  const specialCases = findBlock(/(?:exception|special case|unless|except|if you (?:are|have))[^.]{20,300}\./i, '');
+  const unusual = findBlock(/(?:please note|important[: ]|note that|warning|caution)[^.]{20,300}\./i, '');
+
+  return {
+    serviceName: hints.serviceName, mdaCode: hints.mdaCode, serviceMode: hints.serviceMode,
+    whatService, whoFor, beforeStart: '',
+    whatToHave, costsDeadlines, whatItMeans, whatHappensAfter,
+    commonConfusion: '', specialCases, unusual,
+    alphaPaths: 'no', alphaShape: 'Simple', alphaDropOff: 'none'
+  };
+}
+
+function viewUpload() {
+  return `
+    ${renderBreadcrumbs([{ label: 'Home', to: 'home' }, { label: 'Generate from a form' }])}
+    <h1 class="govbb-text-display">Generate entry page from a form</h1>
+    <p class="govbb-text-body">Upload the actual form (PDF, Word, image, HTML) or paste a URL. The AI reads the form and produces Entry / Start / Guidance drafts. After generation, the service goes straight to T1 review.</p>
+
+    <div class="proto-callout">
+      <p><strong>Supported:</strong> PDF, Word (.docx), image scan with OCR, HTML file, or URL. URL fetching only works if the target site allows cross-origin requests.</p>
+    </div>
+
+    <form class="form-page" id="uploadForm" onsubmit="event.preventDefault();handleUploadGenerate();return false;">
+      <fieldset class="proto-fieldset">
+        <legend class="govbb-text-h3">About the service</legend>
+        <div class="govbb-form-group">
+          <label class="govbb-label" for="upload-name">Service name</label>
+          <p class="govbb-hint">A short, descriptive name. e.g. Apply for direct deposit</p>
+          <div class="govbb-input-wrapper"><input class="govbb-input" id="upload-name" type="text" required /></div>
+        </div>
+        <div class="govbb-form-group">
+          <label class="govbb-label" for="upload-mda">MDA</label>
+          <p class="govbb-hint">Determines who reviews at T2. Add new MDAs from the MDA registry.</p>
+          <div class="govbb-select-wrapper">
+            <select class="govbb-select" id="upload-mda" required>
+              <option value="">Select an MDA</option>
+              ${state.mdas.map(m => '<option value="' + m.code + '">' + escapeHtml(m.name) + '</option>').join('')}
+            </select>
+            <span class="govbb-select__chevron" aria-hidden="true"><svg viewBox="0 0 12 8"><path d="M0 8 6 0 12 8z" /></svg></span>
+          </div>
+        </div>
+        <div class="govbb-form-group">
+          <label class="govbb-label" for="upload-mode">Service mode</label>
+          <div class="govbb-select-wrapper">
+            <select class="govbb-select" id="upload-mode" required>
+              <option value="">Select mode</option>
+              ${['Online','In person','Partly online'].map(m => '<option value="' + m + '">' + m + '</option>').join('')}
+            </select>
+            <span class="govbb-select__chevron" aria-hidden="true"><svg viewBox="0 0 12 8"><path d="M0 8 6 0 12 8z" /></svg></span>
+          </div>
+        </div>
+        <div class="govbb-form-group">
+          <label class="govbb-label" for="upload-by">Submitted by</label>
+          <div class="govbb-input-wrapper"><input class="govbb-input" id="upload-by" type="text" value="Adunni" /></div>
+        </div>
+      </fieldset>
+
+      <fieldset class="proto-fieldset">
+        <legend class="govbb-text-h3">Provide the form</legend>
+        <p class="govbb-hint">Either upload a file or paste a URL. If both are provided, the file takes priority.</p>
+        <div class="govbb-form-group">
+          <label class="govbb-label" for="upload-file">Upload form file</label>
+          <p class="govbb-hint">PDF, .docx, .doc, .png, .jpg, .jpeg, .gif, .webp, .html, .htm</p>
+          <div class="govbb-input-wrapper"><input class="govbb-input" id="upload-file" type="file" accept=".pdf,.docx,.doc,.png,.jpg,.jpeg,.gif,.webp,.html,.htm" /></div>
+        </div>
+        <div class="govbb-form-group">
+          <label class="govbb-label" for="upload-url">Or paste a form URL</label>
+          <p class="govbb-hint">e.g. https://forms.gov.bb/...</p>
+          <div class="govbb-input-wrapper"><input class="govbb-input" id="upload-url" type="url" placeholder="https://forms.gov.bb/..." /></div>
+        </div>
+      </fieldset>
+
+      <div class="govbb-btn-group">
+        <button type="button" class="govbb-btn--secondary" onclick="nav('home')">Cancel</button>
+        <button type="submit" class="govbb-btn">Generate entry page</button>
+      </div>
+
+      <div id="upload-status" style="margin-top: var(--spacing-m);">${uploadStatus}</div>
+    </form>
+  `;
+}
+
+function setUploadStatus(html) {
+  uploadStatus = html;
+  const el = document.getElementById('upload-status');
+  if (el) el.innerHTML = html;
+}
+
+async function handleUploadGenerate() {
+  const serviceName = document.getElementById('upload-name').value.trim();
+  const mdaCode = document.getElementById('upload-mda').value;
+  const serviceMode = document.getElementById('upload-mode').value;
+  const submittedBy = (document.getElementById('upload-by').value || '').trim() || 'Adunni';
+  const file = document.getElementById('upload-file').files[0];
+  const url = (document.getElementById('upload-url').value || '').trim();
+
+  if (!serviceName || !mdaCode || !serviceMode) {
+    setUploadStatus('<div class="proto-callout proto-callout--error"><p><strong>Missing fields.</strong> Service name, MDA, and service mode are required.</p></div>'); return;
+  }
+  if (!file && !url) {
+    setUploadStatus('<div class="proto-callout proto-callout--error"><p><strong>Provide a form.</strong> Upload a file or paste a URL.</p></div>'); return;
+  }
+
+  let text = '';
+  try {
+    if (file) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (ext === 'pdf') {
+        setUploadStatus('<p>Reading PDF text...</p>');
+        text = await parsePdf(file);
+      } else if (ext === 'docx' || ext === 'doc') {
+        setUploadStatus('<p>Reading Word document...</p>');
+        text = await parseDocx(file);
+      } else if (['png','jpg','jpeg','gif','webp'].includes(ext)) {
+        setUploadStatus('<p>Running OCR on image (the OCR engine may take 20-30 seconds to download on the first run)...</p>');
+        text = await parseImage(file, msg => {
+          if (msg.status === 'recognizing text') setUploadStatus('<p>OCR: ' + Math.round(msg.progress * 100) + '%</p>');
+          else if (msg.status) setUploadStatus('<p>OCR: ' + msg.status + '...</p>');
+        });
+      } else if (ext === 'html' || ext === 'htm') {
+        setUploadStatus('<p>Reading HTML...</p>');
+        text = await parseHtmlFile(file);
+      } else {
+        throw new Error('Unsupported file type ".' + ext + '". Try PDF, .docx, image, or .html.');
+      }
+    } else {
+      setUploadStatus('<p>Fetching form from URL...</p>');
+      try { text = await fetchFormUrl(url); }
+      catch (e) { throw new Error('Could not fetch the URL. The server probably does not allow cross-origin requests. Try downloading the form and uploading it as a file.'); }
+    }
+
+    if (!text || text.length < 50) {
+      throw new Error('Could not extract enough text from the form. The document may be empty, image-only without OCR, or have unsupported encoding.');
+    }
+
+    setUploadStatus('<p>Extracting fields and generating drafts...</p>');
+    const fields = extractFieldsFromText(text, { serviceName, mdaCode, serviceMode });
+    const formUrlInferred = url || 'https://forms.gov.bb/' + (mdaCode||'').toLowerCase() + '/' + slugify(serviceName);
+
+    const s = Object.assign({
+      id: uid(),
+      submittedAt: new Date().toISOString(),
+      submittedBy,
+      formUrl: formUrlInferred,
+      mdaContact: getMda(mdaCode)?.validator || '',
+      sourceFile: file ? file.name : url,
+      sourceText: text.slice(0, 1500),
+      history: [{ at: new Date().toISOString(), who: submittedBy, action: 'Uploaded form', note: file ? 'File: ' + file.name + ' (' + Math.round(file.size/1024) + ' KB)' : 'URL: ' + url }]
+    }, fields);
+
+    const triage = runTriage(s);
+    if (!triage.passed) {
+      s.stage = 'rejected-triage'; s.triageReasons = triage.reasons; s.risk = 'n/a';
+      s.history.push({ at: new Date().toISOString(), who: 'System', action: 'Triage failed', note: triage.reasons.length + ' issues' });
+    } else {
+      const risk = scoreRisk(s);
+      s.risk = risk.level; s.riskReasons = risk.reasons;
+      s.pageModel = decidePageModel(s);
+      s.stage = 'validating-t1';
+      s.slaDue = new Date(Date.now() + 5*86400000).toISOString();
+      s.history.push({ at: new Date().toISOString(), who: 'System', action: 'Triage passed', note: 'All required fields present' });
+      s.history.push({ at: new Date().toISOString(), who: 'AI Generator', action: 'Drafts produced from form', note: 'Page model: ' + s.pageModel + ', Risk: ' + risk.level + '. Source: ' + (file ? file.name : url) });
+      s.history.push({ at: new Date().toISOString(), who: 'System', action: 'Sent to T1 review', note: 'Auto-routed to GovTech content team. 5-day SLA.' });
+    }
+
+    state.services.push(s);
+    saveState();
+    uploadStatus = '';
+    nav('service', { id: s.id });
+  } catch (err) {
+    setUploadStatus('<div class="proto-callout proto-callout--error"><p><strong>Could not process the form.</strong> ' + escapeHtml(err.message) + '</p></div>');
+  }
+}
+
+// =========================================================================
+// MAIN RENDER
+// =========================================================================
+function render() {
+  document.getElementById('nav').innerHTML = renderNav();
+  const app = document.getElementById('app');
+  switch (route.name) {
+    case 'home': app.innerHTML = viewHome(); break;
+    case 'submit': app.innerHTML = viewSubmit(); document.getElementById('submitForm').addEventListener('submit', handleSubmit); break;
+    case 'upload': app.innerHTML = viewUpload(); break;
+    case 'service': app.innerHTML = viewService(); break;
+    case 'pipeline': app.innerHTML = viewPipeline(); break;
+    case 'inbox': app.innerHTML = viewInbox(); break;
+    case 'mdas': app.innerHTML = viewMdas(); break;
+    case 'principles': app.innerHTML = viewPrinciples(); break;
+    default: app.innerHTML = viewHome();
+  }
+}
+
+document.getElementById('seedBtn').addEventListener('click', () => {
+  if (confirm('Reset to demo data? This will delete any submissions you have added.')) resetState();
+});
+
+render();
+</script>
+</body>
+</html>
