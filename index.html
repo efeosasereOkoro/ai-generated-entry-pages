@@ -444,11 +444,11 @@ const STAGES = {
 function seedData() {
   return {
     mdas: [
-      { code: 'NIS', name: 'National Insurance Department', validator: 'Anne Marie King', email: 'amking@nis.gov.bb', backup: 'D. Worrell', backupEmail: 'dworrell@nis.gov.bb' },
-      { code: 'BRA', name: 'Barbados Revenue Authority', validator: 'L. Mottley', email: 'lmottley@bra.gov.bb', backup: '', backupEmail: '' },
-      { code: 'MoH', name: 'Ministry of Health and Wellness', validator: 'A. Forde', email: 'aforde@health.gov.bb', backup: '', backupEmail: '' },
-      { code: 'CRD', name: 'Civil Registration Department', validator: 'M. Greaves', email: 'mgreaves@crd.gov.bb', backup: 'S. Layne', backupEmail: 'slayne@crd.gov.bb' },
-      { code: 'BLP', name: 'Barbados Licensing Authority', validator: 'K. Roach', email: 'kroach@bla.gov.bb', backup: '', backupEmail: '' }
+      { code: 'NIS', name: 'National Insurance Department', website: 'https://nis.gov.bb', validator: 'Anne Marie King', email: 'amking@nis.gov.bb', backup: 'D. Worrell', backupEmail: 'dworrell@nis.gov.bb' },
+      { code: 'BRA', name: 'Barbados Revenue Authority', website: 'https://bra.gov.bb', validator: 'L. Mottley', email: 'lmottley@bra.gov.bb', backup: '', backupEmail: '' },
+      { code: 'MoH', name: 'Ministry of Health and Wellness', website: 'https://health.gov.bb', validator: 'A. Forde', email: 'aforde@health.gov.bb', backup: '', backupEmail: '' },
+      { code: 'CRD', name: 'Civil Registration Department', website: 'https://crd.gov.bb', validator: 'M. Greaves', email: 'mgreaves@crd.gov.bb', backup: 'S. Layne', backupEmail: 'slayne@crd.gov.bb' },
+      { code: 'BLP', name: 'Barbados Licensing Authority', website: 'https://bla.gov.bb', validator: 'K. Roach', email: 'kroach@bla.gov.bb', backup: '', backupEmail: '' }
     ],
     services: [
       {
@@ -1150,16 +1150,62 @@ function cancelAddMda() { ui.addingMda = false; render(); }
 function submitAddMda() {
   const code = (document.getElementById('new-mda-code').value || '').trim().toUpperCase();
   const name = (document.getElementById('new-mda-name').value || '').trim();
+  const website = (document.getElementById('new-mda-website')?.value || '').trim();
   const validator = (document.getElementById('new-mda-validator').value || '').trim();
   const email = (document.getElementById('new-mda-email').value || '').trim();
   const backup = (document.getElementById('new-mda-backup').value || '').trim();
   const backupEmail = (document.getElementById('new-mda-backup-email').value || '').trim();
   if (!code || !name) { alert('MDA code and name are required.'); return; }
   if (state.mdas.find(m => m.code === code)) { alert('That code is already in use.'); return; }
-  state.mdas.push({ code, name, validator, email, backup, backupEmail });
+  state.mdas.push({ code, name, website, validator, email, backup, backupEmail });
   ui.addingMda = false;
+  // Auto-select the new MDA if we are on the upload page
   saveState();
   render();
+  const sel = document.getElementById('upload-mda');
+  if (sel) sel.value = code;
+}
+
+function renderAddMdaForm() {
+  return `
+    <div class="proto-callout">
+      <p><strong>Add a new MDA</strong></p>
+      <div class="govbb-form-group">
+        <label class="govbb-label" for="new-mda-code">Code (short, uppercase)</label>
+        <p class="govbb-hint">e.g. BPS, MTW, MEW</p>
+        <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-code" type="text" placeholder="e.g. BPS" /></div>
+      </div>
+      <div class="govbb-form-group">
+        <label class="govbb-label" for="new-mda-name">Ministry / Department name</label>
+        <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-name" type="text" placeholder="e.g. Barbados Postal Service" /></div>
+      </div>
+      <div class="govbb-form-group">
+        <label class="govbb-label" for="new-mda-website">Website</label>
+        <p class="govbb-hint">The AI consults this for context when generating entry pages.</p>
+        <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-website" type="url" placeholder="https://example.gov.bb" /></div>
+      </div>
+      <div class="govbb-form-group">
+        <label class="govbb-label" for="new-mda-validator">Primary validator</label>
+        <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-validator" type="text" placeholder="Full name" /></div>
+      </div>
+      <div class="govbb-form-group">
+        <label class="govbb-label" for="new-mda-email">Primary validator email</label>
+        <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-email" type="email" placeholder="name@org.gov.bb" /></div>
+      </div>
+      <div class="govbb-form-group">
+        <label class="govbb-label" for="new-mda-backup">Backup contact (recommended)</label>
+        <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-backup" type="text" placeholder="Full name" /></div>
+      </div>
+      <div class="govbb-form-group">
+        <label class="govbb-label" for="new-mda-backup-email">Backup email</label>
+        <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-backup-email" type="email" placeholder="name@org.gov.bb" /></div>
+      </div>
+      <div class="govbb-btn-group">
+        <button type="button" class="govbb-btn" onclick="submitAddMda()">Add MDA</button>
+        <button type="button" class="govbb-btn--secondary" onclick="cancelAddMda()">Cancel</button>
+      </div>
+    </div>
+  `;
 }
 
 function renderReworkPanel() {
@@ -1370,49 +1416,17 @@ function viewMdas() {
       ${ui.addingMda ? '' : '<button class="govbb-btn" onclick="showAddMda()">+ Add new MDA</button>'}
     </div>
 
-    ${ui.addingMda ? `
-      <div class="proto-callout">
-        <p><strong>Add a new MDA</strong></p>
-        <div class="govbb-form-group">
-          <label class="govbb-label" for="new-mda-code">Code (short, uppercase)</label>
-          <p class="govbb-hint">e.g. BPS, MTW, MEW</p>
-          <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-code" type="text" placeholder="e.g. BPS" /></div>
-        </div>
-        <div class="govbb-form-group">
-          <label class="govbb-label" for="new-mda-name">Ministry / Department name</label>
-          <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-name" type="text" placeholder="e.g. Barbados Postal Service" /></div>
-        </div>
-        <div class="govbb-form-group">
-          <label class="govbb-label" for="new-mda-validator">Primary validator</label>
-          <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-validator" type="text" placeholder="Full name" /></div>
-        </div>
-        <div class="govbb-form-group">
-          <label class="govbb-label" for="new-mda-email">Primary validator email</label>
-          <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-email" type="email" placeholder="name@org.gov.bb" /></div>
-        </div>
-        <div class="govbb-form-group">
-          <label class="govbb-label" for="new-mda-backup">Backup contact (recommended)</label>
-          <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-backup" type="text" placeholder="Full name" /></div>
-        </div>
-        <div class="govbb-form-group">
-          <label class="govbb-label" for="new-mda-backup-email">Backup email</label>
-          <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-backup-email" type="email" placeholder="name@org.gov.bb" /></div>
-        </div>
-        <div class="govbb-btn-group">
-          <button class="govbb-btn" onclick="submitAddMda()">Add MDA</button>
-          <button class="govbb-btn--secondary" onclick="cancelAddMda()">Cancel</button>
-        </div>
-      </div>
-    ` : ''}
+    ${ui.addingMda ? renderAddMdaForm() : ''}
 
     <table class="proto-table">
-      <thead><tr><th>Code</th><th>Ministry / Department</th><th>Primary validator</th><th>Backup</th><th>Services</th></tr></thead>
+      <thead><tr><th>Code</th><th>Ministry / Department</th><th>Website</th><th>Primary validator</th><th>Backup</th><th>Services</th></tr></thead>
       <tbody>
         ${state.mdas.map(m => {
           const count = state.services.filter(s => s.mdaCode === m.code).length;
           return `<tr>
             <td><span class="proto-tag tag-shape">${m.code}</span></td>
             <td>${escapeHtml(m.name)}</td>
+            <td>${m.website?`<a class="govbb-link" href="${escapeHtml(m.website)}" target="_blank" rel="noopener">${escapeHtml(m.website.replace(/^https?:\/\//,''))}</a>`:'<span style="color:#d4351c;">— missing —</span>'}</td>
             <td>${escapeHtml(m.validator)}<div class="govbb-text-caption">${escapeHtml(m.email)}</div></td>
             <td>${m.backup?escapeHtml(m.backup):'<span style="color:#d4351c;">— missing —</span>'}<div class="govbb-text-caption">${escapeHtml(m.backupEmail||'')}</div></td>
             <td>${count}</td>
@@ -1524,6 +1538,49 @@ async function fetchFormUrl(url) {
   return tmp.textContent.replace(/\s+/g, ' ').trim();
 }
 
+async function fetchFormUrlWithMeta(url) {
+  const res = await fetch(url, { mode: 'cors' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const html = await res.text();
+  let title = '';
+  let text = '';
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    title = (doc.querySelector('h1')?.textContent || doc.title || '').trim().replace(/\s+/g, ' ');
+    text = (doc.body?.textContent || '').replace(/\s+/g, ' ').trim();
+  } catch (e) {
+    const tmp = document.createElement('div'); tmp.innerHTML = html;
+    text = tmp.textContent.replace(/\s+/g, ' ').trim();
+  }
+  return { text, title, html };
+}
+
+function inferServiceName(formMeta, urlString) {
+  if (formMeta.title && formMeta.title.length > 3 && formMeta.title.length < 120) {
+    return formMeta.title;
+  }
+  try {
+    const u = new URL(urlString);
+    const segments = u.pathname.split('/').filter(Boolean);
+    const lastSeg = segments[segments.length - 1] || segments[0] || 'service';
+    return lastSeg.replace(/\.[a-z]+$/i, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  } catch (e) {
+    return 'Service from ' + urlString.slice(0, 60);
+  }
+}
+
+function inferServiceMode(text) {
+  const lower = text.toLowerCase();
+  const inPersonHints = /visit our office|visit the office|come in person|attend in person|attend a polyclinic|appointment at our|pick up in person|collect (?:at|in person)|in person at|at the (?:department|office|polyclinic)/;
+  const onlineHints = /submit online|fill out online|complete online|apply online|online application|electronic submission|web form|this online form/;
+  const hasInPerson = inPersonHints.test(lower);
+  const hasOnline = onlineHints.test(lower);
+  if (hasInPerson && hasOnline) return 'Partly online';
+  if (hasInPerson) return 'In person';
+  return 'Online';
+}
+
 function extractFieldsFromText(rawText, hints) {
   const text = rawText.replace(/\s+/g, ' ').trim();
   const sentences = text.split(/(?<=[.!?])\s/).filter(s => s.length > 10);
@@ -1588,41 +1645,31 @@ function viewUpload() {
   return `
     ${renderBreadcrumbs([{ label: 'Home', to: 'home' }, { label: 'Generate from a form' }])}
     <h1 class="govbb-text-display">Generate entry page from a form</h1>
-    <p class="govbb-text-body">Upload the actual form (PDF, Word, image, HTML) or paste a URL. The AI reads the form and produces Entry / Start / Guidance drafts. After generation, the service goes straight to T1 review.</p>
+    <p class="govbb-text-body">Paste the URL of the form. The AI fetches it, infers the service name and mode, drafts Entry / Start / Guidance pages following the gov.bb content principles, and routes the result to T1 review.</p>
 
     <div class="proto-callout">
-      <p><strong>Supported:</strong> PDF, Word (.docx), image scan with OCR, HTML file, or URL. URL fetching only works if the target site allows cross-origin requests.</p>
+      <p><strong>How it works:</strong> The AI reads the form at the URL, consults the MDA's official website for context, and produces drafts. After generation, the service goes straight to T1 review — content team and named MDA validator review before publish.</p>
     </div>
 
     <form class="form-page" id="uploadForm" onsubmit="event.preventDefault();handleUploadGenerate();return false;">
       <fieldset class="proto-fieldset">
         <legend class="govbb-text-h3">About the service</legend>
-        <div class="govbb-form-group">
-          <label class="govbb-label" for="upload-name">Service name</label>
-          <p class="govbb-hint">A short, descriptive name. e.g. Apply for direct deposit</p>
-          <div class="govbb-input-wrapper"><input class="govbb-input" id="upload-name" type="text" required /></div>
-        </div>
+
         <div class="govbb-form-group">
           <label class="govbb-label" for="upload-mda">MDA</label>
-          <p class="govbb-hint">Determines who reviews at T2. Add new MDAs from the MDA registry.</p>
+          <p class="govbb-hint">Determines who reviews at T2. The AI also consults this MDA's website for additional context.</p>
           <div class="govbb-select-wrapper">
-            <select class="govbb-select" id="upload-mda" required>
+            <select class="govbb-select" id="upload-mda" ${ui.addingMda ? 'disabled' : 'required'}>
               <option value="">Select an MDA</option>
               ${state.mdas.map(m => '<option value="' + m.code + '">' + escapeHtml(m.name) + '</option>').join('')}
             </select>
             <span class="govbb-select__chevron" aria-hidden="true"><svg viewBox="0 0 12 8"><path d="M0 8 6 0 12 8z" /></svg></span>
           </div>
+          ${ui.addingMda ? '' : '<button type="button" class="govbb-btn--tertiary" onclick="showAddMda()" style="margin-top: var(--spacing-xs); align-self: flex-start;">+ Add new MDA</button>'}
         </div>
-        <div class="govbb-form-group">
-          <label class="govbb-label" for="upload-mode">Service mode</label>
-          <div class="govbb-select-wrapper">
-            <select class="govbb-select" id="upload-mode" required>
-              <option value="">Select mode</option>
-              ${['Online','In person','Partly online'].map(m => '<option value="' + m + '">' + m + '</option>').join('')}
-            </select>
-            <span class="govbb-select__chevron" aria-hidden="true"><svg viewBox="0 0 12 8"><path d="M0 8 6 0 12 8z" /></svg></span>
-          </div>
-        </div>
+
+        ${ui.addingMda ? renderAddMdaForm() : ''}
+
         <div class="govbb-form-group">
           <label class="govbb-label" for="upload-by">Submitted by</label>
           <div class="govbb-input-wrapper"><input class="govbb-input" id="upload-by" type="text" value="Adunni" /></div>
@@ -1630,17 +1677,11 @@ function viewUpload() {
       </fieldset>
 
       <fieldset class="proto-fieldset">
-        <legend class="govbb-text-h3">Provide the form</legend>
-        <p class="govbb-hint">Either upload a file or paste a URL. If both are provided, the file takes priority.</p>
+        <legend class="govbb-text-h3">Form URL</legend>
         <div class="govbb-form-group">
-          <label class="govbb-label" for="upload-file">Upload form file</label>
-          <p class="govbb-hint">PDF, .docx, .doc, .png, .jpg, .jpeg, .gif, .webp, .html, .htm</p>
-          <div class="govbb-input-wrapper"><input class="govbb-input" id="upload-file" type="file" accept=".pdf,.docx,.doc,.png,.jpg,.jpeg,.gif,.webp,.html,.htm" /></div>
-        </div>
-        <div class="govbb-form-group">
-          <label class="govbb-label" for="upload-url">Or paste a form URL</label>
-          <p class="govbb-hint">e.g. https://forms.gov.bb/...</p>
-          <div class="govbb-input-wrapper"><input class="govbb-input" id="upload-url" type="url" placeholder="https://forms.gov.bb/..." /></div>
+          <label class="govbb-label" for="upload-url">URL of the form</label>
+          <p class="govbb-hint">e.g. a forms.gov.bb URL or a GitHub Pages URL where a prototype form lives.</p>
+          <div class="govbb-input-wrapper"><input class="govbb-input" id="upload-url" type="url" required placeholder="https://forms.gov.bb/..." /></div>
         </div>
       </fieldset>
 
@@ -1661,65 +1702,67 @@ function setUploadStatus(html) {
 }
 
 async function handleUploadGenerate() {
-  const serviceName = document.getElementById('upload-name').value.trim();
   const mdaCode = document.getElementById('upload-mda').value;
-  const serviceMode = document.getElementById('upload-mode').value;
   const submittedBy = (document.getElementById('upload-by').value || '').trim() || 'Adunni';
-  const file = document.getElementById('upload-file').files[0];
   const url = (document.getElementById('upload-url').value || '').trim();
 
-  if (!serviceName || !mdaCode || !serviceMode) {
-    setUploadStatus('<div class="proto-callout proto-callout--error"><p><strong>Missing fields.</strong> Service name, MDA, and service mode are required.</p></div>'); return;
+  if (!mdaCode) {
+    setUploadStatus('<div class="proto-callout proto-callout--error"><p><strong>MDA required.</strong> Select an MDA from the list, or add a new one.</p></div>');
+    return;
   }
-  if (!file && !url) {
-    setUploadStatus('<div class="proto-callout proto-callout--error"><p><strong>Provide a form.</strong> Upload a file or paste a URL.</p></div>'); return;
+  if (!url) {
+    setUploadStatus('<div class="proto-callout proto-callout--error"><p><strong>Form URL required.</strong></p></div>');
+    return;
   }
 
-  let text = '';
   try {
-    if (file) {
-      const ext = file.name.split('.').pop().toLowerCase();
-      if (ext === 'pdf') {
-        setUploadStatus('<p>Reading PDF text...</p>');
-        text = await parsePdf(file);
-      } else if (ext === 'docx' || ext === 'doc') {
-        setUploadStatus('<p>Reading Word document...</p>');
-        text = await parseDocx(file);
-      } else if (['png','jpg','jpeg','gif','webp'].includes(ext)) {
-        setUploadStatus('<p>Running OCR on image (the OCR engine may take 20-30 seconds to download on the first run)...</p>');
-        text = await parseImage(file, msg => {
-          if (msg.status === 'recognizing text') setUploadStatus('<p>OCR: ' + Math.round(msg.progress * 100) + '%</p>');
-          else if (msg.status) setUploadStatus('<p>OCR: ' + msg.status + '...</p>');
-        });
-      } else if (ext === 'html' || ext === 'htm') {
-        setUploadStatus('<p>Reading HTML...</p>');
-        text = await parseHtmlFile(file);
-      } else {
-        throw new Error('Unsupported file type ".' + ext + '". Try PDF, .docx, image, or .html.');
+    setUploadStatus('<p>Fetching form from URL…</p>');
+    let formData;
+    try {
+      formData = await fetchFormUrlWithMeta(url);
+    } catch (e) {
+      throw new Error('Could not fetch the form URL. The host may not allow cross-origin requests. (Try a GitHub Pages-hosted prototype form.)');
+    }
+
+    if (!formData.text || formData.text.length < 50) {
+      throw new Error('The page at that URL did not contain enough text to analyse. It may be a blank page, an image, or a JavaScript-rendered form that requires a server-side fetch.');
+    }
+
+    const mda = getMda(mdaCode);
+    let mdaContext = '';
+    if (mda?.website) {
+      setUploadStatus('<p>Consulting ' + escapeHtml(mda.name) + ' website (' + escapeHtml(mda.website) + ')…</p>');
+      try {
+        const mdaData = await fetchFormUrlWithMeta(mda.website);
+        mdaContext = mdaData.text.slice(0, 4000);
+      } catch (e) {
+        // MDA site fetch failed (CORS or 404) — we proceed without it.
       }
-    } else {
-      setUploadStatus('<p>Fetching form from URL...</p>');
-      try { text = await fetchFormUrl(url); }
-      catch (e) { throw new Error('Could not fetch the URL. The server probably does not allow cross-origin requests. Try downloading the form and uploading it as a file.'); }
     }
 
-    if (!text || text.length < 50) {
-      throw new Error('Could not extract enough text from the form. The document may be empty, image-only without OCR, or have unsupported encoding.');
-    }
+    setUploadStatus('<p>Inferring service name and mode…</p>');
+    const inferredName = inferServiceName(formData, url);
+    const combinedText = formData.text + (mdaContext ? '\n\n[MDA context from ' + mda.website + ']\n' + mdaContext : '');
+    const inferredMode = inferServiceMode(combinedText);
 
-    setUploadStatus('<p>Extracting fields and generating drafts...</p>');
-    const fields = extractFieldsFromText(text, { serviceName, mdaCode, serviceMode });
-    const formUrlInferred = url || 'https://forms.gov.bb/' + (mdaCode||'').toLowerCase() + '/' + slugify(serviceName);
+    setUploadStatus('<p>Generating Entry / Start / Guidance drafts…</p>');
+    const fields = extractFieldsFromText(combinedText, {
+      serviceName: inferredName,
+      mdaCode,
+      serviceMode: inferredMode
+    });
 
     const s = Object.assign({
       id: uid(),
       submittedAt: new Date().toISOString(),
       submittedBy,
-      formUrl: formUrlInferred,
-      mdaContact: getMda(mdaCode)?.validator || '',
-      sourceFile: file ? file.name : url,
-      sourceText: text.slice(0, 1500),
-      history: [{ at: new Date().toISOString(), who: submittedBy, action: 'Uploaded form', note: file ? 'File: ' + file.name + ' (' + Math.round(file.size/1024) + ' KB)' : 'URL: ' + url }]
+      formUrl: url,
+      mdaContact: mda?.validator || '',
+      sourceFile: url,
+      sourceText: formData.text.slice(0, 1500),
+      history: [
+        { at: new Date().toISOString(), who: submittedBy, action: 'Submitted form URL', note: 'URL: ' + url + ' · MDA: ' + (mda?.name || mdaCode) }
+      ]
     }, fields);
 
     const triage = runTriage(s);
@@ -1732,8 +1775,9 @@ async function handleUploadGenerate() {
       s.pageModel = decidePageModel(s);
       s.stage = 'validating-t1';
       s.slaDue = new Date(Date.now() + 5*86400000).toISOString();
+      s.history.push({ at: new Date().toISOString(), who: 'AI', action: 'Inferred service details', note: 'Service name: "' + inferredName + '" · Mode: ' + inferredMode + (mdaContext ? ' · MDA website: consulted' : ' · MDA website: not reachable') });
       s.history.push({ at: new Date().toISOString(), who: 'System', action: 'Triage passed', note: 'All required fields present' });
-      s.history.push({ at: new Date().toISOString(), who: 'AI Generator', action: 'Drafts produced from form', note: 'Page model: ' + s.pageModel + ', Risk: ' + risk.level + '. Source: ' + (file ? file.name : url) });
+      s.history.push({ at: new Date().toISOString(), who: 'AI Generator', action: 'Drafts produced from form', note: 'Page model: ' + s.pageModel + ', Risk: ' + risk.level });
       s.history.push({ at: new Date().toISOString(), who: 'System', action: 'Sent to T1 review', note: 'Auto-routed to GovTech content team. 5-day SLA.' });
     }
 
