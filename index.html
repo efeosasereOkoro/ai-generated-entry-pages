@@ -501,11 +501,11 @@ const STAGES = {
 function seedData() {
   return {
     mdas: [
-      { code: 'NIS', name: 'National Insurance Department', website: 'https://nis.gov.bb', validator: 'Anne Marie King', email: 'amking@nis.gov.bb', backup: 'D. Worrell', backupEmail: 'dworrell@nis.gov.bb' },
-      { code: 'BRA', name: 'Barbados Revenue Authority', website: 'https://bra.gov.bb', validator: 'L. Mottley', email: 'lmottley@bra.gov.bb', backup: '', backupEmail: '' },
-      { code: 'MoH', name: 'Ministry of Health and Wellness', website: 'https://health.gov.bb', validator: 'A. Forde', email: 'aforde@health.gov.bb', backup: '', backupEmail: '' },
-      { code: 'CRD', name: 'Civil Registration Department', website: 'https://crd.gov.bb', validator: 'M. Greaves', email: 'mgreaves@crd.gov.bb', backup: 'S. Layne', backupEmail: 'slayne@crd.gov.bb' },
-      { code: 'BLP', name: 'Barbados Licensing Authority', website: 'https://bla.gov.bb', validator: 'K. Roach', email: 'kroach@bla.gov.bb', backup: '', backupEmail: '' }
+      { code: 'NIS', name: 'National Insurance Department', website: 'https://nis.gov.bb', validator: 'Anne Marie King', email: 'amking@nis.gov.bb', phone: '+1 (246) 431-7400', backup: 'D. Worrell', backupEmail: 'dworrell@nis.gov.bb', backupPhone: '+1 (246) 431-7401' },
+      { code: 'BRA', name: 'Barbados Revenue Authority', website: 'https://bra.gov.bb', validator: 'L. Mottley', email: 'lmottley@bra.gov.bb', phone: '+1 (246) 535-7000', backup: '', backupEmail: '', backupPhone: '' },
+      { code: 'MoH', name: 'Ministry of Health and Wellness', website: 'https://health.gov.bb', validator: 'A. Forde', email: 'aforde@health.gov.bb', phone: '+1 (246) 426-5570', backup: '', backupEmail: '', backupPhone: '' },
+      { code: 'CRD', name: 'Civil Registration Department', website: 'https://crd.gov.bb', validator: 'M. Greaves', email: 'mgreaves@crd.gov.bb', phone: '+1 (246) 228-7812', backup: 'S. Layne', backupEmail: 'slayne@crd.gov.bb', backupPhone: '+1 (246) 228-7813' },
+      { code: 'BLP', name: 'Barbados Licensing Authority', website: 'https://bla.gov.bb', validator: 'K. Roach', email: 'kroach@bla.gov.bb', phone: '+1 (246) 424-8070', backup: '', backupEmail: '', backupPhone: '' }
     ],
     services: [
       {
@@ -1172,7 +1172,11 @@ function advanceStage(id, newStage, who, note) {
 // =========================================================================
 // REVIEW UI — rework feedback panel, inline editing, MDA registration
 // =========================================================================
-let ui = { reworkFor: null, editingFor: null, addingMda: false };
+const CONTENT_TEAM = [
+  'Marisa Joseph', 'Shayla Cummins', 'Fabian Clarke', 'Adunni Thomas', 'Ricardo Boyce'
+];
+
+let ui = { reworkFor: null, editingFor: null, addingMda: false, editingMdaCode: null, editingEligibility: null };
 
 function showRework(id, role) { ui.reworkFor = { id, role }; render(); }
 function cancelRework() { ui.reworkFor = null; render(); }
@@ -1203,7 +1207,7 @@ function saveEdit(id) {
   render();
 }
 
-function showAddMda() { ui.addingMda = true; render(); }
+function showAddMda() { ui.addingMda = true; ui.editingMdaCode = null; render(); }
 function cancelAddMda() { ui.addingMda = false; render(); }
 function submitAddMda() {
   const code = (document.getElementById('new-mda-code').value || '').trim().toUpperCase();
@@ -1211,52 +1215,143 @@ function submitAddMda() {
   const website = (document.getElementById('new-mda-website')?.value || '').trim();
   const validator = (document.getElementById('new-mda-validator').value || '').trim();
   const email = (document.getElementById('new-mda-email').value || '').trim();
+  const phone = (document.getElementById('new-mda-phone')?.value || '').trim();
   const backup = (document.getElementById('new-mda-backup').value || '').trim();
   const backupEmail = (document.getElementById('new-mda-backup-email').value || '').trim();
+  const backupPhone = (document.getElementById('new-mda-backup-phone')?.value || '').trim();
   if (!code || !name) { alert('MDA code and name are required.'); return; }
   if (state.mdas.find(m => m.code === code)) { alert('That code is already in use.'); return; }
-  state.mdas.push({ code, name, website, validator, email, backup, backupEmail });
+  state.mdas.push({ code, name, website, validator, email, phone, backup, backupEmail, backupPhone });
   ui.addingMda = false;
-  // Auto-select the new MDA if we are on the upload page
   saveState();
   render();
   const sel = document.getElementById('upload-mda');
   if (sel) sel.value = code;
 }
 
+function showEditMda(code) { ui.editingMdaCode = code; ui.addingMda = false; render(); }
+function cancelEditMda() { ui.editingMdaCode = null; render(); }
+function submitEditMda(code) {
+  const m = state.mdas.find(x => x.code === code);
+  if (!m) return;
+  m.name = (document.getElementById('edit-mda-name').value || '').trim();
+  m.website = (document.getElementById('edit-mda-website').value || '').trim();
+  m.validator = (document.getElementById('edit-mda-validator').value || '').trim();
+  m.email = (document.getElementById('edit-mda-email').value || '').trim();
+  m.phone = (document.getElementById('edit-mda-phone').value || '').trim();
+  m.backup = (document.getElementById('edit-mda-backup').value || '').trim();
+  m.backupEmail = (document.getElementById('edit-mda-backup-email').value || '').trim();
+  m.backupPhone = (document.getElementById('edit-mda-backup-phone').value || '').trim();
+  ui.editingMdaCode = null;
+  saveState(); render();
+}
+function deleteMda(code) {
+  const inUse = state.services.some(s => s.mdaCode === code);
+  if (inUse) { alert('This MDA has services linked to it and cannot be deleted. Re-assign those services first.'); return; }
+  if (!confirm('Delete ' + code + ' from the registry?')) return;
+  state.mdas = state.mdas.filter(m => m.code !== code);
+  saveState(); render();
+}
+
+function renderEditMdaForm(m) {
+  return `
+    <tr style="background:var(--color-blue-10)">
+      <td colspan="8">
+        <div style="padding:var(--spacing-s);display:grid;grid-template-columns:1fr 1fr;gap:var(--spacing-s)">
+          <div>
+            <div class="govbb-form-group">
+              <label class="govbb-label">Ministry / Department name</label>
+              <div class="govbb-input-wrapper"><input id="edit-mda-name" value="${escapeHtml(m.name)}"></div>
+            </div>
+            <div class="govbb-form-group">
+              <label class="govbb-label">Website</label>
+              <div class="govbb-input-wrapper"><input id="edit-mda-website" type="url" value="${escapeHtml(m.website||'')}"></div>
+            </div>
+            <div class="govbb-form-group">
+              <label class="govbb-label">Primary validator</label>
+              <div class="govbb-input-wrapper"><input id="edit-mda-validator" value="${escapeHtml(m.validator||'')}"></div>
+            </div>
+            <div class="govbb-form-group">
+              <label class="govbb-label">Primary email</label>
+              <div class="govbb-input-wrapper"><input id="edit-mda-email" type="email" value="${escapeHtml(m.email||'')}"></div>
+            </div>
+            <div class="govbb-form-group">
+              <label class="govbb-label">Primary phone</label>
+              <div class="govbb-input-wrapper"><input id="edit-mda-phone" type="tel" value="${escapeHtml(m.phone||'')}"></div>
+            </div>
+          </div>
+          <div>
+            <div class="govbb-form-group">
+              <label class="govbb-label">Backup contact</label>
+              <div class="govbb-input-wrapper"><input id="edit-mda-backup" value="${escapeHtml(m.backup||'')}"></div>
+            </div>
+            <div class="govbb-form-group">
+              <label class="govbb-label">Backup email</label>
+              <div class="govbb-input-wrapper"><input id="edit-mda-backup-email" type="email" value="${escapeHtml(m.backupEmail||'')}"></div>
+            </div>
+            <div class="govbb-form-group">
+              <label class="govbb-label">Backup phone</label>
+              <div class="govbb-input-wrapper"><input id="edit-mda-backup-phone" type="tel" value="${escapeHtml(m.backupPhone||'')}"></div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:0 var(--spacing-s) var(--spacing-s);display:flex;gap:var(--spacing-xs)">
+          <button class="govbb-btn" onclick="submitEditMda('${escapeHtml(m.code)}')">Save changes</button>
+          <button class="govbb-btn--secondary" onclick="cancelEditMda()">Cancel</button>
+          <button class="govbb-btn--destructive" onclick="deleteMda('${escapeHtml(m.code)}')" style="margin-left:auto">Delete MDA</button>
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
 function renderAddMdaForm() {
   return `
-    <div class="proto-callout">
+    <div class="proto-callout" style="margin-bottom:var(--spacing-m)">
       <p><strong>Add a new MDA</strong></p>
-      <div class="govbb-form-group">
-        <label class="govbb-label" for="new-mda-code">Code (short, uppercase)</label>
-        <p class="govbb-hint">e.g. BPS, MTW, MEW</p>
-        <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-code" type="text" placeholder="e.g. BPS" /></div>
-      </div>
-      <div class="govbb-form-group">
-        <label class="govbb-label" for="new-mda-name">Ministry / Department name</label>
-        <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-name" type="text" placeholder="e.g. Barbados Postal Service" /></div>
-      </div>
-      <div class="govbb-form-group">
-        <label class="govbb-label" for="new-mda-website">Website</label>
-        <p class="govbb-hint">The AI consults this for context when generating entry pages.</p>
-        <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-website" type="url" placeholder="https://example.gov.bb" /></div>
-      </div>
-      <div class="govbb-form-group">
-        <label class="govbb-label" for="new-mda-validator">Primary validator</label>
-        <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-validator" type="text" placeholder="Full name" /></div>
-      </div>
-      <div class="govbb-form-group">
-        <label class="govbb-label" for="new-mda-email">Primary validator email</label>
-        <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-email" type="email" placeholder="name@org.gov.bb" /></div>
-      </div>
-      <div class="govbb-form-group">
-        <label class="govbb-label" for="new-mda-backup">Backup contact (recommended)</label>
-        <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-backup" type="text" placeholder="Full name" /></div>
-      </div>
-      <div class="govbb-form-group">
-        <label class="govbb-label" for="new-mda-backup-email">Backup email</label>
-        <div class="govbb-input-wrapper"><input class="govbb-input" id="new-mda-backup-email" type="email" placeholder="name@org.gov.bb" /></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--spacing-s);margin-top:var(--spacing-s)">
+        <div>
+          <div class="govbb-form-group">
+            <label class="govbb-label" for="new-mda-code">Code (short, uppercase) *</label>
+            <p class="govbb-hint">e.g. BPS, MTW, MEW</p>
+            <div class="govbb-input-wrapper"><input id="new-mda-code" type="text" placeholder="e.g. BPS" /></div>
+          </div>
+          <div class="govbb-form-group">
+            <label class="govbb-label" for="new-mda-name">Ministry / Department name *</label>
+            <div class="govbb-input-wrapper"><input id="new-mda-name" type="text" placeholder="e.g. Barbados Postal Service" /></div>
+          </div>
+          <div class="govbb-form-group">
+            <label class="govbb-label" for="new-mda-website">Website</label>
+            <p class="govbb-hint">The AI consults this when generating entry pages.</p>
+            <div class="govbb-input-wrapper"><input id="new-mda-website" type="url" placeholder="https://example.gov.bb" /></div>
+          </div>
+          <div class="govbb-form-group">
+            <label class="govbb-label" for="new-mda-validator">Primary validator</label>
+            <div class="govbb-input-wrapper"><input id="new-mda-validator" type="text" placeholder="Full name" /></div>
+          </div>
+          <div class="govbb-form-group">
+            <label class="govbb-label" for="new-mda-email">Primary email</label>
+            <div class="govbb-input-wrapper"><input id="new-mda-email" type="email" placeholder="name@org.gov.bb" /></div>
+          </div>
+          <div class="govbb-form-group">
+            <label class="govbb-label" for="new-mda-phone">Primary phone</label>
+            <div class="govbb-input-wrapper"><input id="new-mda-phone" type="tel" placeholder="+1 (246) 000-0000" /></div>
+          </div>
+        </div>
+        <div>
+          <div class="govbb-form-group">
+            <label class="govbb-label" for="new-mda-backup">Backup contact (recommended)</label>
+            <div class="govbb-input-wrapper"><input id="new-mda-backup" type="text" placeholder="Full name" /></div>
+          </div>
+          <div class="govbb-form-group">
+            <label class="govbb-label" for="new-mda-backup-email">Backup email</label>
+            <div class="govbb-input-wrapper"><input id="new-mda-backup-email" type="email" placeholder="name@org.gov.bb" /></div>
+          </div>
+          <div class="govbb-form-group">
+            <label class="govbb-label" for="new-mda-backup-phone">Backup phone</label>
+            <div class="govbb-input-wrapper"><input id="new-mda-backup-phone" type="tel" placeholder="+1 (246) 000-0000" /></div>
+          </div>
+        </div>
       </div>
       <div class="govbb-btn-group">
         <button type="button" class="govbb-btn" onclick="submitAddMda()">Add MDA</button>
@@ -1321,6 +1416,8 @@ function renderEditPanel(s) {
 // LIVE PREVIEW (uses the GOVBB service template structure)
 // =========================================================================
 function renderEntryPreview(e, s) {
+  const isEditingElig = ui.editingEligibility === s.id;
+  const eligibility = s.eligibility || s.whoFor || '';
   return `
     <nav class="govbb-breadcrumbs" aria-label="Breadcrumb">
       <ol class="govbb-breadcrumbs__list">
@@ -1333,10 +1430,43 @@ function renderEntryPreview(e, s) {
     <div class="govbb-freshness"><p class="govbb-freshness__meta govbb-text-caption">Last updated: ${fmtDate(s.publishedAt || s.submittedAt)}</p></div>
     <section style="margin-top:var(--spacing-m);">
       <p class="govbb-text-body">${escapeHtml(e.summary)}</p>
-      <p class="govbb-text-body"><strong>Who this service is for:</strong> ${escapeHtml(e.whoFor)}</p>
+
+      <!-- Eligibility section — editable -->
+      <div style="border:2px solid var(--color-blue-10);border-radius:var(--radius-sm);padding:var(--spacing-s);margin:var(--spacing-s) 0;position:relative">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--spacing-xs)">
+          <strong class="govbb-text-body">Who this service is for</strong>
+          ${isEditingElig
+            ? `<div style="display:flex;gap:var(--spacing-xs)">
+                <button class="govbb-btn" style="padding:4px 10px;font-size:0.8rem" onclick="saveEligibility('${s.id}')">Save</button>
+                <button class="govbb-btn--secondary" style="padding:4px 10px;font-size:0.8rem" onclick="cancelEligibility()">Cancel</button>
+               </div>`
+            : `<button class="govbb-btn--tertiary" style="padding:4px 10px;font-size:0.8rem" onclick="editEligibility('${s.id}')">Edit eligibility</button>`
+          }
+        </div>
+        ${isEditingElig
+          ? `<div class="govbb-input-wrapper"><textarea id="eligibility-input" class="govbb-textarea" rows="4" style="min-height:5rem">${escapeHtml(eligibility)}</textarea></div>
+             <p class="govbb-hint" style="margin-top:var(--spacing-xs)">State clearly who qualifies. Be specific — vague eligibility is the most common reason for support contacts.</p>`
+          : `<p class="govbb-text-body">${escapeHtml(eligibility) || '<em style="color:var(--color-mid-grey-00)">No eligibility criteria set yet — click Edit eligibility to add.</em>'}</p>`
+        }
+      </div>
+
       <a class="govbb-btn" href="#" style="margin-top:var(--spacing-s);">${escapeHtml(e.cta.label)}</a>
     </section>
   `;
+}
+
+function editEligibility(id) { ui.editingEligibility = id; render(); }
+function cancelEligibility() { ui.editingEligibility = null; render(); }
+function saveEligibility(id) {
+  const s = state.services.find(x => x.id === id);
+  const el = document.getElementById('eligibility-input');
+  if (s && el) {
+    s.eligibility = el.value.trim();
+    s.history.push({ at: new Date().toISOString(), who: 'Content team', action: 'Eligibility updated', note: s.eligibility.slice(0, 120) });
+    saveState();
+  }
+  ui.editingEligibility = null;
+  render();
 }
 
 function renderStartPreview(st, s) {
@@ -1446,7 +1576,7 @@ function viewInbox() {
           ${inbox.map(s => {
             const mda = getMda(s.mdaCode);
             const t1 = s.stage === 'validating-t1', t2 = s.stage === 'validating-t2';
-            const assigned = t1 ? 'GovTech content team' : t2 ? `${mda?mda.validator:''} (${mda?mda.code:''})` : 'Forms team (rework)';
+            const assigned = t1 ? (mda && mda.contentLead ? mda.contentLead + ' (Content team)' : 'GovTech content team') : t2 ? `${mda?mda.validator:''} (${mda?mda.code:''})` : 'Forms team (rework)';
             return `<tr data-clickable onclick="nav('service',{id:'${s.id}'})">
               <td><a class="govbb-link" href="#" onclick="event.stopPropagation();nav('service',{id:'${s.id}'});return false;">${escapeHtml(s.serviceName)}</a></td>
               <td>${t1?'<span class="proto-tag tag-tier1">T1</span>':t2?'<span class="proto-tag tag-tier2">T2</span>':'<span class="proto-tag tag-rework">REWORK</span>'}</td>
@@ -1468,38 +1598,75 @@ function viewMdas() {
   return `
     ${renderBreadcrumbs([{ label: 'Home', to: 'home' }, { label: 'MDA registry' }])}
     <h1 class="govbb-text-display">MDA registry</h1>
-    <p class="govbb-text-body">Named validator per ministry, with a backup contact. New service submissions must resolve to one of these. New MDAs added here appear immediately in the discovery-form dropdown.</p>
+    <p class="govbb-text-body">Named validator per ministry, with a backup contact and assigned content team member. New service submissions must resolve to one of these.</p>
 
-    <div class="govbb-btn-group" style="margin-bottom: var(--spacing-s);">
+    <div class="govbb-btn-group" style="margin-bottom:var(--spacing-s)">
       ${ui.addingMda ? '' : '<button class="govbb-btn" onclick="showAddMda()">+ Add new MDA</button>'}
     </div>
 
     ${ui.addingMda ? renderAddMdaForm() : ''}
 
     <table class="proto-table">
-      <thead><tr><th>Code</th><th>Ministry / Department</th><th>Website</th><th>Primary validator</th><th>Backup</th><th>Services</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Ministry / Department</th>
+          <th>Primary validator</th>
+          <th>Backup contact</th>
+          <th>Content lead</th>
+          <th>Services</th>
+          <th></th>
+        </tr>
+      </thead>
       <tbody>
         ${state.mdas.map(m => {
           const count = state.services.filter(s => s.mdaCode === m.code).length;
-          return `<tr>
-            <td><span class="proto-tag tag-shape">${m.code}</span></td>
-            <td>${escapeHtml(m.name)}</td>
-            <td>${m.website?`<a class="govbb-link" href="${escapeHtml(m.website)}" target="_blank" rel="noopener">${escapeHtml(m.website.replace(/^https?:\/\//,''))}</a>`:'<span style="color:#d4351c;">— missing —</span>'}</td>
-            <td>${escapeHtml(m.validator)}<div class="govbb-text-caption">${escapeHtml(m.email)}</div></td>
-            <td>${m.backup?escapeHtml(m.backup):'<span style="color:#d4351c;">— missing —</span>'}<div class="govbb-text-caption">${escapeHtml(m.backupEmail||'')}</div></td>
-            <td>${count}</td>
-          </tr>`;
+          const isEditing = ui.editingMdaCode === m.code;
+          const teamOptions = CONTENT_TEAM.map(t => `<option value="${escapeHtml(t)}" ${m.contentLead===t?'selected':''}>${escapeHtml(t)}</option>`).join('');
+          if (isEditing) return renderEditMdaForm(m);
+          return `
+            <tr>
+              <td><span class="proto-tag tag-shape">${escapeHtml(m.code)}</span></td>
+              <td>
+                ${escapeHtml(m.name)}
+                ${m.website ? `<div class="govbb-text-caption"><a class="govbb-link" href="${escapeHtml(m.website)}" target="_blank" rel="noopener">${escapeHtml(m.website.replace(/^https?:\/\//,''))}</a></div>` : '<div class="govbb-text-caption" style="color:#d4351c">— no website —</div>'}
+              </td>
+              <td>
+                ${m.validator ? escapeHtml(m.validator) : '<span style="color:#d4351c">— missing —</span>'}
+                ${m.email ? `<div class="govbb-text-caption"><a class="govbb-link" href="mailto:${escapeHtml(m.email)}">${escapeHtml(m.email)}</a></div>` : ''}
+                ${m.phone ? `<div class="govbb-text-caption">📞 ${escapeHtml(m.phone)}</div>` : ''}
+              </td>
+              <td>
+                ${m.backup ? escapeHtml(m.backup) : '<span style="color:#d4351c">— missing —</span>'}
+                ${m.backupEmail ? `<div class="govbb-text-caption"><a class="govbb-link" href="mailto:${escapeHtml(m.backupEmail)}">${escapeHtml(m.backupEmail)}</a></div>` : ''}
+                ${m.backupPhone ? `<div class="govbb-text-caption">📞 ${escapeHtml(m.backupPhone)}</div>` : ''}
+              </td>
+              <td>
+                <select class="govbb-select" style="border:1px solid var(--color-grey-30);border-radius:var(--radius-sm);padding:4px 8px;font-size:0.875rem;min-width:130px"
+                  onchange="assignContentLead('${escapeHtml(m.code)}', this.value)">
+                  <option value="">— unassigned —</option>
+                  ${teamOptions}
+                </select>
+              </td>
+              <td>${count}</td>
+              <td><button class="govbb-btn--tertiary" style="padding:4px 10px;font-size:0.8rem" onclick="showEditMda('${escapeHtml(m.code)}')">Edit</button></td>
+            </tr>
+          `;
         }).join('')}
       </tbody>
     </table>
 
-    <div class="proto-callout proto-callout--warning" style="margin-top: var(--spacing-s);">
-      <p><strong>Gap to close.</strong></p>
-      <p>Some ministries have no backup contact. A single person on leave will block their entire validation queue. Add backups before scaling.</p>
-    </div>
+    ${state.mdas.some(m => !m.backup) ? `
+    <div class="proto-callout proto-callout--warning" style="margin-top:var(--spacing-s)">
+      <p><strong>Gap to close.</strong> Some MDAs have no backup contact. A single person on leave will block their entire validation queue. Add backups before scaling.</p>
+    </div>` : ''}
   `;
 }
 
+function assignContentLead(code, person) {
+  const m = state.mdas.find(x => x.code === code);
+  if (m) { m.contentLead = person; saveState(); }
+}
 // =========================================================================
 // PRINCIPLES
 // =========================================================================
