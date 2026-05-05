@@ -1550,10 +1550,13 @@ async function fetchFormUrlWithMeta(url) {
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
-    // Remove noise: scripts, styles, nav, footer, header, hidden elements, comments
-    doc.querySelectorAll('script, style, noscript, nav, footer, header, [hidden], [aria-hidden="true"], .footer, .nav, .header, .cookie, [role="navigation"], [role="contentinfo"]').forEach(el => el.remove());
 
+    // Capture title FIRST (before any stripping) — H1 may live inside a <header>
     title = (doc.querySelector('h1')?.textContent || doc.title || '').trim().replace(/\s+/g, ' ');
+
+    // Then remove the obvious noise: scripts, styles, nav, footer, hidden elements
+    // (We deliberately do NOT strip <header> — page headers often contain the H1.)
+    doc.querySelectorAll('script, style, noscript, nav, footer, [hidden], [aria-hidden="true"], .cookie, [role="navigation"], [role="contentinfo"]').forEach(el => el.remove());
 
     // Form labels = "What you need" — the fields a citizen actually has to fill in
     formFields = Array.from(doc.querySelectorAll('label')).map(l => {
@@ -1793,8 +1796,10 @@ async function handleUploadGenerate() {
       throw new Error('Could not fetch the form URL. The host may not allow cross-origin requests. (Try a GitHub Pages-hosted prototype form.)');
     }
 
-    if (!formData.text || formData.text.length < 50) {
-      throw new Error('The page at that URL did not contain enough text to analyse. It may be a blank page, an image, or a JavaScript-rendered form that requires a server-side fetch.');
+    const textLen = (formData.text || '').length;
+    const fieldCount = (formData.formFields || []).length;
+    if (textLen < 20 && fieldCount < 2 && !formData.title) {
+      throw new Error('The page at that URL did not contain enough text or form fields to analyse. It may be a blank page, an image, or a JavaScript-rendered form whose content only appears after the page runs scripts.');
     }
 
     const mda = getMda(mdaCode);
